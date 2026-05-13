@@ -1684,7 +1684,7 @@
                 // 设置相关
                 this.autoSaveIntervalInput.addEventListener('change', (e) => {
                     const value = parseInt(e.target.value);
-                    if (value >= 1 && value <= 30) {
+                    if (value >= 1 && value <= 300) {
                         this.updateSetting('autoSaveInterval', value * 1000);
                         this.showMessage(`自动保存间隔已设置为${value}秒`, 'success');
                     }
