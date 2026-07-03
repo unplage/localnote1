@@ -51,6 +51,7 @@
         .header-actions { display: flex; gap: 8px; }
         .icon-btn { background: none; border: none; font-size: 20px; color: var(--text-secondary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
         .icon-btn:active { background-color: rgba(0, 0, 0, 0.1); }
+        .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .main-content { padding: 20px 0 80px; }
 
@@ -415,7 +416,6 @@
         import Color from '@tiptap/extension-color';
         import Highlight from '@tiptap/extension-highlight';
         import TextAlign from '@tiptap/extension-text-align';
-        // 修复 P0: 重命名 Image 避免覆盖原生构造函数
         import ImageExtension from '@tiptap/extension-image';
 
         const FontSize = Mark.create({
@@ -480,7 +480,6 @@
             }
         });
 
-        // 彻底重构加密管理器：使用原生 Blob/fetch 进行大文件转换，杜绝栈溢出
         class CryptoManager {
             constructor() { this.key = null; }
             async deriveKey(password, salt) {
@@ -645,18 +644,35 @@
             }
 
             getAllCategories() {
-                return new Promise(res => {
+                return new Promise(async (res) => {
                     const r = this._tx('categories').getAll();
-                    r.onsuccess = () => res(r.result || []);
+                    r.onsuccess = async () => {
+                        let cats = r.result || [];
+                        let needUpdate = false;
+                        cats.forEach((c, i) => {
+                            if (c.order === undefined) {
+                                c.order = i;
+                                needUpdate = true;
+                            }
+                        });
+                        if (needUpdate) {
+                            for (let c of cats) await this.saveCategory(c);
+                        }
+                        cats.sort((a, b) => (a.order || 0) - (b.order || 0));
+                        res(cats);
+                    };
                     r.onerror = () => res([]);
                 });
             }
+            
             saveCategory(cat) {
-                return new Promise(res => {
-                    this._tx('categories', 'readwrite').put(cat);
-                    res();
+                return new Promise((resolve, reject) => {
+                    const req = this._tx('categories', 'readwrite').put(cat);
+                    req.onsuccess = () => resolve(cat);
+                    req.onerror = () => reject(req.error);
                 });
             }
+
             deleteCategory(id) {
                 return new Promise(res => {
                     this._tx('categories', 'readwrite').delete(id);
@@ -665,7 +681,6 @@
             }
         }
 
-        // 修复 P2: extractText 改为迭代实现，防止深层嵌套栈溢出
         function extractText(json) {
             if (!json || typeof json !== 'object') return '';
             let text = '';
@@ -717,7 +732,6 @@
                     resolve(file); return;
                 }
                 const url = URL.createObjectURL(file);
-                // 修复 P0: 使用 window.Image 调用原生构造函数
                 const img = new window.Image();
                 img.onload = () => {
                     URL.revokeObjectURL(url);
@@ -814,7 +828,6 @@
                     formatPreview: document.getElementById('formatPreview'),
                     cancelCustomTimestamp: document.getElementById('cancelCustomTimestamp'),
                     insertCustomTimestamp: document.getElementById('insertCustomTimestamp'),
-                    // 修复 P1: 确保获取这些元素
                     importModal: document.getElementById('importModal'),
                     closeImportModal: document.getElementById('closeImportModal'),
                     importJsonBtn2: document.getElementById('importJsonBtn2'),
@@ -905,11 +918,11 @@
 
             async initDefaultData() {
                 const cats = [
-                    { id: 'daily', name: '小可爱', color: '#5D5CDE' },
-                    { id: 'work', name: '阅读', color: '#FF9500' },
-                    { id: 'ideas', name: '随记', color: '#34C759' },
-                    { id: 'memories', name: '计划', color: '#FF69B4' },
-                    { id: 'other', name: '工作', color: '#9E9E9E' }
+                    { id: 'daily', name: '小可爱', color: '#5D5CDE', order: 0 },
+                    { id: 'work', name: '阅读', color: '#FF9500', order: 1 },
+                    { id: 'ideas', name: '随记', color: '#34C759', order: 2 },
+                    { id: 'memories', name: '计划', color: '#FF69B4', order: 3 },
+                    { id: 'other', name: '工作', color: '#9E9E9E', order: 4 }
                 ];
                 for (let cat of cats) await this.db.saveCategory(cat);
             }
@@ -962,37 +975,108 @@
                 this.els.categories.innerHTML = `<button class="category-btn active" data-id="all">全部</button>`;
                 cats.forEach(c => {
                     const btn = document.createElement('button');
-                    btn.className = 'category-btn'; btn.dataset.id = c.id; btn.innerText = c.name;
+                    btn.className = 'category-btn'; 
+                    btn.dataset.id = c.id; 
+                    btn.innerText = c.name;
+                    btn.style.borderColor = c.color;
+                    btn.style.color = c.color;
                     this.els.categories.appendChild(btn);
                 });
                 this.els.categorySelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                this.renderCategoryList();
+                
+                if (this.els.categoryManageModal.classList.contains('active')) {
+                    this.renderCategoryList();
+                }
             }
 
             async renderCategoryList() {
                 const cats = await this.db.getAllCategories();
                 this.els.categoryList.innerHTML = '';
-                cats.forEach(c => {
+                cats.forEach((c, index) => {
                     const div = document.createElement('div');
-                    div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.gap = '8px'; div.style.padding = '8px 0'; div.style.borderBottom = '1px solid var(--border-color)';
+                    div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.gap = '4px'; div.style.padding = '8px 0'; div.style.borderBottom = '1px solid var(--border-color)';
                     div.innerHTML = `
-                        <input type="color" value="${c.color}" data-id="${c.id}" style="width:24px;height:24px;border:none;cursor:pointer;">
-                        <span style="flex:1;">${c.name}</span>
+                        <div style="display:flex; flex-direction:column; margin-right:4px;">
+                            <button class="icon-btn up-btn" data-id="${c.id}" style="height:20px; font-size:12px;" ${index === 0 ? 'disabled' : ''}><i class="fas fa-caret-up"></i></button>
+                            <button class="icon-btn down-btn" data-id="${c.id}" style="height:20px; font-size:12px;" ${index === cats.length - 1 ? 'disabled' : ''}><i class="fas fa-caret-down"></i></button>
+                        </div>
+                        <input type="color" class="cat-color-input" value="${c.color}" data-id="${c.id}" style="width:28px;height:28px;border:none;cursor:pointer;background:transparent;">
+                        <input type="text" class="cat-name-input" value="${c.name}" data-id="${c.id}" style="flex:1;padding:4px;border:1px solid transparent;background:transparent;color:var(--text-primary);">
                         <button class="icon-btn delete-category" data-id="${c.id}" title="删除"><i class="fas fa-trash"></i></button>
                     `;
                     this.els.categoryList.appendChild(div);
                 });
+                this.bindCategoryListEvents();
+            }
+
+            bindCategoryListEvents() {
+                this.els.categoryList.querySelectorAll('.up-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (btn.disabled) return;
+                        await this.swapCategoryOrder(btn.dataset.id, -1);
+                    });
+                });
+                this.els.categoryList.querySelectorAll('.down-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (btn.disabled) return;
+                        await this.swapCategoryOrder(btn.dataset.id, 1);
+                    });
+                });
+                this.els.categoryList.querySelectorAll('.cat-color-input').forEach(input => {
+                    input.addEventListener('change', async (e) => {
+                        const id = e.target.dataset.id; 
+                        const color = e.target.value;
+                        const cats = await this.db.getAllCategories();
+                        const cat = cats.find(c => c.id === id);
+                        if (cat) { 
+                            cat.color = color; 
+                            await this.db.saveCategory(cat); 
+                            this.renderCategories();
+                        }
+                    });
+                });
+                this.els.categoryList.querySelectorAll('.cat-name-input').forEach(input => {
+                    input.addEventListener('blur', async (e) => {
+                        const id = e.target.dataset.id; 
+                        const name = e.target.value.trim();
+                        if (!name) {
+                            alert('分类名称不能为空');
+                            this.renderCategoryList();
+                            return;
+                        }
+                        const cats = await this.db.getAllCategories();
+                        const cat = cats.find(c => c.id === id);
+                        if (cat && cat.name !== name) { 
+                            cat.name = name; 
+                            await this.db.saveCategory(cat); 
+                            this.renderCategories();
+                        }
+                    });
+                });
                 this.els.categoryList.querySelectorAll('.delete-category').forEach(btn => {
                     btn.addEventListener('click', () => this.deleteCategory(btn.dataset.id));
                 });
-                this.els.categoryList.querySelectorAll('input[type="color"]').forEach(input => {
-                    input.addEventListener('change', async (e) => {
-                        const id = e.target.dataset.id; const color = e.target.value;
-                        const cats = await this.db.getAllCategories();
-                        const cat = cats.find(c => c.id === id);
-                        if (cat) { cat.color = color; await this.db.saveCategory(cat); this.renderCategories(); }
-                    });
-                });
+            }
+
+            async swapCategoryOrder(id, direction) {
+                const cats = await this.db.getAllCategories();
+                const index = cats.findIndex(c => c.id === id);
+                if (index === -1) return;
+                
+                const targetIndex = index + direction;
+                if (targetIndex < 0 || targetIndex >= cats.length) return;
+                
+                const currentCat = cats[index];
+                const targetCat = cats[targetIndex];
+                
+                const tempOrder = currentCat.order;
+                currentCat.order = targetCat.order;
+                targetCat.order = tempOrder;
+                
+                await this.db.saveCategory(currentCat);
+                await this.db.saveCategory(targetCat);
+                
+                this.renderCategories();
             }
 
             async deleteCategory(id) {
@@ -1110,7 +1194,6 @@
                             Color.configure({ types: ['textStyle'] }),
                             Highlight.configure({ multicolor: true }),
                             TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right'] }),
-                            // 修复 P0: 使用重命名的扩展
                             ImageExtension.configure({ allowBase64: true }),
                             FontSize, Indent,
                             Placeholder.configure({ placeholder: '开始记录...' })
@@ -1392,7 +1475,6 @@
                             let content = note.content;
                             if (typeof content === 'string') content = convertPlainToJSON(content);
                             const newNote = {
-                                // 修复 P2: 使用更安全的随机 ID
                                 id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' + count,
                                 title: note.title || '未命名笔记',
                                 content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
@@ -1467,14 +1549,20 @@
                     this.els.searchInput.value = ''; this.renderNotes();
                 });
 
-                this.els.categoryManageBtn.addEventListener('click', () => this.showModal(this.els.categoryManageModal));
+                this.els.categoryManageBtn.addEventListener('click', async () => {
+                    await this.renderCategoryList();
+                    this.showModal(this.els.categoryManageModal);
+                });
                 this.els.closeCategoryManageModal.addEventListener('click', () => this.hideModal(this.els.categoryManageModal));
                 this.els.addNewCategoryBtn.addEventListener('click', async () => {
                     const name = this.els.newCategoryName.value.trim();
                     const color = this.els.newCategoryColor.value;
                     if (!name) return;
-                    await this.db.saveCategory({ id: 'cat_' + Date.now(), name, color });
+                    const cats = await this.db.getAllCategories();
+                    const newOrder = cats.length > 0 ? Math.max(...cats.map(c => c.order || 0)) + 1 : 0;
+                    await this.db.saveCategory({ id: 'cat_' + Date.now(), name, color, order: newOrder });
                     this.els.newCategoryName.value = '';
+                    this.renderCategoryList();
                     this.renderCategories();
                 });
 
@@ -1487,7 +1575,6 @@
                 this.els.exportJsonBtn.addEventListener('click', () => this.exportNotes('json'));
                 this.els.exportMarkdownBtn.addEventListener('click', () => this.exportNotes('markdown'));
 
-                // 修复 P1: 补全导入模态框相关事件绑定
                 this.els.importJsonBtn.addEventListener('click', () => this.showModal(this.els.importModal));
                 this.els.closeImportModal.addEventListener('click', () => this.hideModal(this.els.importModal));
                 this.els.importJsonBtn2.addEventListener('click', () => {
