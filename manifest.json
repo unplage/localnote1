@@ -2,12 +2,12 @@
     "name": "本地笔记本-轻量记事本",
     "short_name": "LocalNote",
     "description": "一个功能强大的本地笔记本 PWA 应用",
-    "start_url": "/localnote/",
+    "start_url": "/localnote1/",
     "display": "standalone",
     "background_color": "#f5f5f5",
     "theme_color": "#4CAF50",
     "orientation": "portrait",
-    "scope": "/localnote/",
+    "scope": "/localnote1/",
     "icons": [
         {
             "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%234CAF50' width='192' height='192' rx='20'/%3E%3Ctext x='96' y='120' font-size='80' text-anchor='middle' fill='white'%3EL%3C/text%3E%3C/svg%3E",
