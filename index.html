@@ -81,6 +81,7 @@
         .editor-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--card-color);
             z-index: 1000; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column;
+            overflow: hidden; /* 修复：防止容器本身溢出 */
         }
         .editor-container.active { transform: translateX(0); }
         .editor-container.swiping { transition: none; }
@@ -90,32 +91,31 @@
             padding-top: max(12px, env(safe-area-inset-top));
         }
         .editor-actions { display: flex; gap: 8px; }
-        /* 顶部 Header 的保存状态样式调整 */
         .editor-header .auto-save-status {
             flex: 1; text-align: center; font-size: 12px; color: var(--text-secondary);
             opacity: 0; transition: opacity 0.3s;
         }
         .editor-header .auto-save-status.show { opacity: 1; }
 
-        .editor-content { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; }
+        .editor-content { 
+            flex: 1; padding: 16px; display: flex; flex-direction: column; 
+            min-height: 0; /* 修复：Flex 溢出 */
+            overflow: hidden; /* 改为 hidden，由内部 tiptap-editor 负责滚动 */
+        }
         
-        /* 新增：标题行布局，让标题和分类选择在一行 */
         .title-row {
             display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
         }
-        /* 修改：标题输入框去掉原有的下边距，占据剩余空间 */
         .note-title-input {
             width: 100%; font-size: 22px; font-weight: 600; border: none; outline: none;
             background: transparent; color: var(--text-primary); margin-bottom: 0; flex: 1; min-width: 0;
         }
-        /* 修改：分类选择框自适应宽度 */
         .category-select {
             width: auto; max-width: 120px; padding: 6px 10px; font-size: 14px;
             border: 1px solid var(--border-color); border-radius: var(--radius-sm);
             background: var(--card-color); color: var(--text-primary);
         }
 
-        /* 新增：工具栏折叠按钮样式 */
         .toolbar-toggle-container { text-align: center; margin-bottom: 12px; }
         .toolbar-toggle-btn {
             background: transparent; border: 1px dashed var(--border-color);
@@ -124,7 +124,6 @@
         }
         .toolbar-toggle-btn:active { background: var(--toolbar-bg); color: var(--primary-color); }
 
-        /* 修改：工具栏默认隐藏 */
         .editor-toolbar {
             display: none; flex-wrap: wrap; gap: 4px; padding: 6px 8px;
             background: var(--toolbar-bg); border-radius: var(--radius-sm);
@@ -141,7 +140,11 @@
         .color-picker-group input[type="color"] { width: 24px; height: 24px; border: none; background: transparent; cursor: pointer; padding: 0; }
         .editor-toolbar select { padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; background: var(--card-color); color: var(--text-primary); }
 
-        #tiptap-editor { flex: 1; font-size: 16px; line-height: 1.6; outline: none; overflow-y: auto; padding-bottom: 40px; }
+        #tiptap-editor { 
+            flex: 1; font-size: 16px; line-height: 1.6; outline: none; padding-bottom: 40px; 
+            min-height: 0; /* 修复：Flex 溢出 */
+            overflow-y: auto; /* 负责实际的内容滚动 */
+        }
         .ProseMirror { outline: none; min-height: 100%; }
         .ProseMirror p { margin: 0 0 0.5em 0; }
         .ProseMirror h1 { font-size: 1.5em; margin: 0.5em 0 0.3em; }
@@ -166,7 +169,6 @@
         }
         .add-button:active { transform: scale(0.92); }
 
-        /* 调整图片浮动按钮位置，因为底部栏已移除 */
         .editor-image-btn {
             position: absolute; bottom: 24px; right: 16px; width: 48px; height: 48px; border-radius: 50%;
             background: var(--primary-color); color: white; border: none; font-size: 20px; cursor: pointer;
@@ -272,7 +274,6 @@
     <div class="editor-container" id="editorContainer">
         <div class="editor-header">
             <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
-            <!-- 移动至此：自动保存状态 -->
             <div class="auto-save-status" id="autoSaveStatus">已保存</div>
             <div class="editor-actions">
                 <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
@@ -281,13 +282,11 @@
             </div>
         </div>
         <div class="editor-content">
-            <!-- 新增：标题行包裹标题与分类选择 -->
             <div class="title-row">
                 <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
                 <select class="category-select" id="categorySelect"></select>
             </div>
 
-            <!-- 新增：工具栏折叠按钮 -->
             <div class="toolbar-toggle-container">
                 <button id="toggleToolbarBtn" class="toolbar-toggle-btn">
                     <i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span>
@@ -825,8 +824,8 @@
                     categorySelect: document.getElementById('categorySelect'),
                     autoSaveStatus: document.getElementById('autoSaveStatus'),
                     toolbar: document.getElementById('editorToolbar'),
-                    toggleToolbarBtn: document.getElementById('toggleToolbarBtn'), // 新增
-                    toggleToolbarText: document.getElementById('toggleToolbarText'), // 新增
+                    toggleToolbarBtn: document.getElementById('toggleToolbarBtn'),
+                    toggleToolbarText: document.getElementById('toggleToolbarText'),
                     addButton: document.getElementById('addButton'),
                     closeEditor: document.getElementById('closeEditor'),
                     saveNote: document.getElementById('saveNote'),
@@ -1195,7 +1194,6 @@
 
                 this.els.editorImageBtn.addEventListener('click', () => this.insertImage());
 
-                // 新增：工具栏折叠/展开逻辑
                 this.els.toggleToolbarBtn.addEventListener('click', () => {
                     const isHidden = this.els.toolbar.style.display === 'none' || getComputedStyle(this.els.toolbar).display === 'none';
                     if (isHidden) {
@@ -1215,6 +1213,9 @@
                 const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
                 this.els.editorContainer.style.height = `${vh}px`;
                 this.els.editorContainer.classList.add('active');
+                
+                // 修复：锁定背景滚动，防止键盘弹出时看到底部的加号按钮
+                document.body.style.overflow = 'hidden';
 
                 let content = { type: 'doc', content: [{ type: 'paragraph' }] };
                 let title = ''; let category = 'daily';
@@ -1277,6 +1278,9 @@
                 this.els.editorContainer.classList.remove('active');
                 this.editingId = null;
                 this.els.timestampToolbar.style.display = 'none';
+                
+                // 修复：恢复背景滚动
+                document.body.style.overflow = '';
             }
 
             async saveNote(force = false) {
