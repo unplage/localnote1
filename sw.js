@@ -4,7 +4,7 @@
 // ---------- 1. 动态路径与缓存名称 ----------
 const BASE_PATH = self.location.pathname.replace(/[^/]+$/, '');
 // 更新版本号，强制刷新缓存（每次更新应用时修改版本号）
-const CACHE_NAME = `pwa-cache${BASE_PATH.replace(/\//g, '-')}v336`;
+const CACHE_NAME = `pwa-cache${BASE_PATH.replace(/\//g, '-')}v337`;
 
 // ---------- 2. 预缓存资源列表（内部 + 外部 CDN） ----------
 // 内部资源
