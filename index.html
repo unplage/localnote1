@@ -77,6 +77,7 @@
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
         .empty-state i { font-size: 48px; margin-bottom: 16px; color: #DDD; }
 
+        /* === 编辑器区域 === */
         .editor-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--card-color);
             z-index: 1000; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column;
@@ -89,12 +90,43 @@
             padding-top: max(12px, env(safe-area-inset-top));
         }
         .editor-actions { display: flex; gap: 8px; }
+        /* 顶部 Header 的保存状态样式调整 */
+        .editor-header .auto-save-status {
+            flex: 1; text-align: center; font-size: 12px; color: var(--text-secondary);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .editor-header .auto-save-status.show { opacity: 1; }
 
         .editor-content { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; }
-        .note-title-input { width: 100%; font-size: 22px; font-weight: 600; border: none; outline: none; margin-bottom: 12px; background: transparent; color: var(--text-primary); }
+        
+        /* 新增：标题行布局，让标题和分类选择在一行 */
+        .title-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+        }
+        /* 修改：标题输入框去掉原有的下边距，占据剩余空间 */
+        .note-title-input {
+            width: 100%; font-size: 22px; font-weight: 600; border: none; outline: none;
+            background: transparent; color: var(--text-primary); margin-bottom: 0; flex: 1; min-width: 0;
+        }
+        /* 修改：分类选择框自适应宽度 */
+        .category-select {
+            width: auto; max-width: 120px; padding: 6px 10px; font-size: 14px;
+            border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+            background: var(--card-color); color: var(--text-primary);
+        }
 
+        /* 新增：工具栏折叠按钮样式 */
+        .toolbar-toggle-container { text-align: center; margin-bottom: 12px; }
+        .toolbar-toggle-btn {
+            background: transparent; border: 1px dashed var(--border-color);
+            color: var(--text-secondary); padding: 4px 12px; border-radius: 12px;
+            font-size: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .toolbar-toggle-btn:active { background: var(--toolbar-bg); color: var(--primary-color); }
+
+        /* 修改：工具栏默认隐藏 */
         .editor-toolbar {
-            display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px;
+            display: none; flex-wrap: wrap; gap: 4px; padding: 6px 8px;
             background: var(--toolbar-bg); border-radius: var(--radius-sm);
             margin-bottom: 12px; border: 1px solid var(--border-color);
         }
@@ -127,15 +159,6 @@
         }
         .timestamp-btn:hover { background: rgba(93,92,222,0.2); }
 
-        .editor-footer {
-            padding: 12px 16px; border-top: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: center;
-            flex-shrink: 0; padding-bottom: max(12px, env(safe-area-inset-bottom));
-        }
-        .category-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 14px; background: var(--card-color); color: var(--text-primary); }
-        .auto-save-status { font-size: 12px; color: var(--text-secondary); opacity: 0; transition: opacity 0.3s; }
-        .auto-save-status.show { opacity: 1; }
-
         .add-button {
             position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%;
             background-color: var(--primary-color); color: white; border: none; font-size: 24px; cursor: pointer;
@@ -143,8 +166,9 @@
         }
         .add-button:active { transform: scale(0.92); }
 
+        /* 调整图片浮动按钮位置，因为底部栏已移除 */
         .editor-image-btn {
-            position: absolute; bottom: 80px; right: 16px; width: 48px; height: 48px; border-radius: 50%;
+            position: absolute; bottom: 24px; right: 16px; width: 48px; height: 48px; border-radius: 50%;
             background: var(--primary-color); color: white; border: none; font-size: 20px; cursor: pointer;
             box-shadow: 0 2px 12px rgba(93,92,222,0.3); z-index: 10;
         }
@@ -248,6 +272,8 @@
     <div class="editor-container" id="editorContainer">
         <div class="editor-header">
             <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
+            <!-- 移动至此：自动保存状态 -->
+            <div class="auto-save-status" id="autoSaveStatus">已保存</div>
             <div class="editor-actions">
                 <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
                 <button class="icon-btn" id="saveNote" title="保存"><i class="fas fa-check"></i></button>
@@ -255,7 +281,19 @@
             </div>
         </div>
         <div class="editor-content">
-            <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
+            <!-- 新增：标题行包裹标题与分类选择 -->
+            <div class="title-row">
+                <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
+                <select class="category-select" id="categorySelect"></select>
+            </div>
+
+            <!-- 新增：工具栏折叠按钮 -->
+            <div class="toolbar-toggle-container">
+                <button id="toggleToolbarBtn" class="toolbar-toggle-btn">
+                    <i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span>
+                </button>
+            </div>
+
             <div class="editor-toolbar" id="editorToolbar">
                 <div class="toolbar-group">
                     <button data-action="toggleBold" title="加粗"><i class="fas fa-bold"></i></button>
@@ -312,14 +350,6 @@
                 <button class="timestamp-btn" data-format="week"><i class="fas fa-calendar-week"></i> 星期</button>
                 <button class="timestamp-btn" data-format="custom"><i class="fas fa-pen"></i> 自定义格式</button>
             </div>
-        </div>
-
-        <div class="editor-footer">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <span>分类:</span>
-                <select class="category-select" id="categorySelect"></select>
-            </div>
-            <div class="auto-save-status" id="autoSaveStatus">已保存</div>
         </div>
 
         <button class="editor-image-btn" id="editorImageBtn" title="插入图片"><i class="fas fa-image"></i></button>
@@ -795,6 +825,8 @@
                     categorySelect: document.getElementById('categorySelect'),
                     autoSaveStatus: document.getElementById('autoSaveStatus'),
                     toolbar: document.getElementById('editorToolbar'),
+                    toggleToolbarBtn: document.getElementById('toggleToolbarBtn'), // 新增
+                    toggleToolbarText: document.getElementById('toggleToolbarText'), // 新增
                     addButton: document.getElementById('addButton'),
                     closeEditor: document.getElementById('closeEditor'),
                     saveNote: document.getElementById('saveNote'),
@@ -1162,6 +1194,20 @@
                 });
 
                 this.els.editorImageBtn.addEventListener('click', () => this.insertImage());
+
+                // 新增：工具栏折叠/展开逻辑
+                this.els.toggleToolbarBtn.addEventListener('click', () => {
+                    const isHidden = this.els.toolbar.style.display === 'none' || getComputedStyle(this.els.toolbar).display === 'none';
+                    if (isHidden) {
+                        this.els.toolbar.style.display = 'flex';
+                        this.els.toggleToolbarText.innerText = '隐藏格式工具栏';
+                        this.els.toggleToolbarBtn.querySelector('i').className = 'fas fa-chevron-up';
+                    } else {
+                        this.els.toolbar.style.display = 'none';
+                        this.els.toggleToolbarText.innerText = '显示格式工具栏';
+                        this.els.toggleToolbarBtn.querySelector('i').className = 'fas fa-pen-fancy';
+                    }
+                });
             }
 
             async openEditor(id = null) {
