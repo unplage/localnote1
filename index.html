@@ -77,16 +77,15 @@
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
         .empty-state i { font-size: 48px; margin-bottom: 16px; color: #DDD; }
 
-        /* === 编辑器区域 - 修复滚动穿透 === */
+        /* === 编辑器区域 === */
         .editor-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; /* 使用 100dvh 确保完全覆盖 */
-            max-height: 100dvh; background-color: var(--card-color);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--card-color);
             z-index: 1000; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column;
-            overscroll-behavior: contain; /* 阻止滚动链 */
+            overflow: hidden; 
+            overscroll-behavior: contain; /* 修复：防止滚动穿透到 body */
         }
         .editor-container.active { transform: translateX(0); }
         .editor-container.swiping { transition: none; }
-
         .editor-header {
             padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid var(--border-color); flex-shrink: 0;
@@ -101,7 +100,8 @@
 
         .editor-content { 
             flex: 1; padding: 16px; display: flex; flex-direction: column; 
-            min-height: 0; overflow: hidden; /* 由内部元素滚动 */
+            min-height: 0; 
+            overflow: hidden; 
         }
         
         .title-row {
@@ -143,7 +143,10 @@
 
         #tiptap-editor { 
             flex: 1; font-size: 16px; line-height: 1.6; outline: none; padding-bottom: 40px; 
-            min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+            min-height: 0; 
+            overflow-y: auto; 
+            overscroll-behavior: contain; /* 修复：防止内部滚动穿透 */
+            -webkit-overflow-scrolling: touch; /* 兼容 iOS 顺滑滚动 */
         }
         .ProseMirror { outline: none; min-height: 100%; }
         .ProseMirror p { margin: 0 0 0.5em 0; }
@@ -799,7 +802,6 @@
                 this.autoSaveTimer = null;
                 this.lastSavedContent = '';
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
-                this._scrollY = 0; // 记录滚动位置
 
                 this.initElements();
                 this.init();
@@ -1209,21 +1211,19 @@
                 });
             }
 
-            // ===== 修复：可靠的滚动锁定 =====
             async openEditor(id = null) {
                 this.editingId = id;
-                
-                // 修复：锁定页面滚动，并记录当前滚动位置
-                this._scrollY = window.scrollY || window.pageYOffset || 0;
-                document.documentElement.style.overflow = 'hidden';
-                document.body.style.overflow = 'hidden';
-                document.body.style.position = 'fixed';
-                document.body.style.width = '100%';
-                document.body.style.top = `-${this._scrollY}px`;
-
                 const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
                 this.els.editorContainer.style.height = `${vh}px`;
                 this.els.editorContainer.classList.add('active');
+                
+                // 修复：彻底锁定背景滚动，防止移动端滚动穿透
+                const scrollY = window.scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollY}px`;
+                document.body.style.left = '0';
+                document.body.style.right = '0';
+                document.body.style.width = '100%';
 
                 let content = { type: 'doc', content: [{ type: 'paragraph' }] };
                 let title = ''; let category = 'daily';
@@ -1282,21 +1282,19 @@
 
             closeEditor(shouldSave = true) {
                 if (shouldSave) this.saveNote(true);
-                
-                // 修复：恢复滚动
-                document.documentElement.style.overflow = '';
-                document.body.style.overflow = '';
-                document.body.style.position = '';
-                document.body.style.width = '';
-                document.body.style.top = '';
-                if (this._scrollY !== undefined) {
-                    window.scrollTo(0, this._scrollY);
-                }
-                
                 this.els.editorContainer.style.transform = '';
                 this.els.editorContainer.classList.remove('active');
                 this.editingId = null;
                 this.els.timestampToolbar.style.display = 'none';
+                
+                // 修复：恢复背景滚动
+                const scrollY = parseInt(document.body.style.top || '0') * -1;
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
+                document.body.style.width = '';
+                window.scrollTo(0, scrollY);
             }
 
             async saveNote(force = false) {
