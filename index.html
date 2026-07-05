@@ -7,110 +7,213 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
     <style>
-        /* 样式与之前完全一致，省略（保持原有全部样式） */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
-        :root{--primary-color:#5D5CDE;--secondary-color:#8A8AFF;--bg-color:#F8F9FA;--card-color:#FFFFFF;--text-primary:#333333;--text-secondary:#777777;--border-color:#E0E0E0;--shadow:0 2px 12px rgba(0,0,0,0.06);--radius:12px;--radius-sm:8px;--danger-color:#FF3B30;--success-color:#34C759;--toolbar-bg:#f5f5f7;--safe-area-bottom:env(safe-area-inset-bottom);--warning-color:#FF9500}
-        [data-theme="dark"]{--bg-color:#121212;--card-color:#1E1E1E;--text-primary:#E0E0E0;--text-secondary:#AAAAAA;--border-color:#333333;--shadow:0 2px 12px rgba(0,0,0,0.3);--toolbar-bg:#2a2a2a}
-        body{background-color:var(--bg-color);color:var(--text-primary);line-height:1.5;overflow-x:hidden}
-        .container{max-width:800px;margin:0 auto;padding:0 16px}
-        .lock-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg-color);z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:opacity 0.4s ease}
-        .lock-screen.hide{opacity:0;pointer-events:none}
-        .lock-card{background:var(--card-color);padding:32px 28px;border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:360px;text-align:center}
-        .lock-card i{font-size:48px;color:var(--primary-color);margin-bottom:16px}
-        .lock-card h2{margin-bottom:8px}
-        .lock-card p{font-size:14px;color:var(--text-secondary);margin-bottom:24px}
-        .lock-input{width:100%;padding:14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);font-size:16px;margin-bottom:12px;text-align:center;background:var(--card-color);color:var(--text-primary)}
-        .lock-input:focus{outline:none;border-color:var(--primary-color)}
-        .lock-btn{width:100%;padding:14px;background:var(--primary-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:500;cursor:pointer;transition:background 0.2s}
-        .lock-btn:active{background:var(--secondary-color)}
-        .lock-error{color:var(--danger-color);font-size:13px;margin-top:12px;display:none}
-        .header{background-color:var(--card-color);padding:16px 0;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);border-bottom:1px solid var(--border-color)}
-        .header-content{display:flex;justify-content:space-between;align-items:center}
-        .logo{font-size:24px;font-weight:700;color:var(--primary-color);display:flex;align-items:center;gap:8px}
-        .header-actions{display:flex;gap:8px}
-        .icon-btn{background:none;border:none;font-size:20px;color:var(--text-secondary);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s}
-        .icon-btn:active{background-color:rgba(0,0,0,0.1)}
-        .icon-btn:disabled{opacity:0.3;cursor:not-allowed}
-        .main-content{padding:20px 0 80px}
-        .search-container{margin-bottom:16px;position:relative;display:none}
-        .search-box{width:100%;padding:14px 20px 14px 48px;border:1px solid var(--border-color);border-radius:var(--radius);font-size:16px;background-color:var(--card-color);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23777777' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;background-size:18px}
-        .search-box:focus{outline:none;border-color:var(--primary-color)}
-        .clear-search{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;display:none;cursor:pointer;color:var(--text-secondary)}
-        .categories{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;white-space:nowrap}
-        .category-btn{padding:8px 16px;background-color:var(--card-color);border:1px solid var(--border-color);border-radius:20px;color:var(--text-secondary);font-size:14px;cursor:pointer}
-        .category-btn.active{background-color:var(--primary-color);color:white;border-color:var(--primary-color)}
-        .notes-list{display:flex;flex-direction:column;gap:12px}
-        .note-item{background-color:var(--card-color);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);cursor:pointer;border-left:4px solid var(--primary-color);transition:transform 0.1s}
-        .note-item:active{transform:scale(0.98)}
-        .note-title{font-size:17px;font-weight:600;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-        .note-content-preview{font-size:14px;color:var(--text-secondary);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-        .note-footer{display:flex;justify-content:space-between;align-items:center}
-        .note-time{font-size:12px;color:var(--text-secondary)}
-        .note-category{font-size:11px;padding:2px 8px;border-radius:10px;background-color:rgba(93,92,222,0.1);color:var(--primary-color)}
-        .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary)}
-        .empty-state i{font-size:48px;margin-bottom:16px;color:#DDD}
-        .offline-banner{background:var(--warning-color);color:white;padding:8px;text-align:center;font-size:13px;border-radius:8px;margin-bottom:12px}
-        .editor-container{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--card-color);z-index:1000;transform:translateX(100%);transition:transform 0.3s ease;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain}
-        .editor-container.active{transform:translateX(0)}
-        .editor-container.swiping{transition:none}
-        .editor-header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);flex-shrink:0;padding-top:max(12px,env(safe-area-inset-top))}
-        .editor-actions{display:flex;gap:8px}
-        .editor-header .auto-save-status{flex:1;text-align:center;font-size:12px;color:var(--text-secondary);opacity:0;transition:opacity 0.3s}
-        .editor-header .auto-save-status.show{opacity:1}
-        .editor-content{flex:1;padding:16px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-        .title-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-        .note-title-input{width:100%;font-size:22px;font-weight:600;border:none;outline:none;background:transparent;color:var(--text-primary);margin-bottom:0;flex:1;min-width:0}
-        .category-select{width:auto;max-width:120px;padding:6px 10px;font-size:14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--card-color);color:var(--text-primary)}
-        .toolbar-toggle-container{text-align:center;margin-bottom:12px}
-        .toolbar-toggle-btn{background:transparent;border:1px dashed var(--border-color);color:var(--text-secondary);padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer;transition:all 0.2s}
-        .toolbar-toggle-btn:active{background:var(--toolbar-bg);color:var(--primary-color)}
-        .editor-toolbar{display:none;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--toolbar-bg);border-radius:var(--radius-sm);margin-bottom:12px;border:1px solid var(--border-color)}
-        .toolbar-group{display:flex;gap:2px;padding-right:6px;margin-right:6px;border-right:1px solid var(--border-color)}
-        .toolbar-group:last-child{border-right:none;margin-right:0}
-        .editor-toolbar button{background:transparent;border:none;padding:6px 8px;border-radius:4px;color:var(--text-secondary);font-size:14px;cursor:pointer;min-width:30px;transition:all 0.15s ease}
-        .editor-toolbar button:hover{background:rgba(93,92,222,0.1);color:var(--primary-color)}
-        .editor-toolbar button.is-active{background:var(--primary-color);color:white}
-        .color-picker-group label{display:flex;align-items:center;gap:2px;cursor:pointer;font-size:12px;color:var(--text-secondary)}
-        .color-picker-group input[type="color"]{width:24px;height:24px;border:none;background:transparent;cursor:pointer;padding:0}
-        .editor-toolbar select{padding:4px;border:1px solid var(--border-color);border-radius:4px;font-size:12px;background:var(--card-color);color:var(--text-primary)}
-        #tiptap-editor{flex:1;font-size:16px;line-height:1.6;outline:none;padding-bottom:40px;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-        .ProseMirror{outline:none;min-height:100%}
-        .ProseMirror p{margin:0 0 0.5em 0}
-        .ProseMirror h1{font-size:1.5em;margin:0.5em 0 0.3em}
-        .ProseMirror h2{font-size:1.3em;margin:0.5em 0 0.3em}
-        .ProseMirror ul,.ProseMirror ol{padding-left:1.5em;margin:0 0 0.5em 0}
-        .ProseMirror blockquote{border-left:3px solid var(--border-color);padding-left:1em;color:var(--text-secondary);margin:0 0 0.5em 0}
-        .ProseMirror code{background:rgba(175,184,193,0.2);border-radius:4px;padding:0.2em 0.4em;font-size:0.9em}
-        .ProseMirror pre{background:#f6f8fa;border-radius:6px;padding:1em;margin:0 0 0.5em 0;overflow:auto}
-        .ProseMirror img{max-width:100%;height:auto;border-radius:8px}
-        .timestamp-toolbar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-        .timestamp-btn{padding:6px 12px;background:rgba(93,92,222,0.1);border:1px solid rgba(93,92,222,0.2);border-radius:var(--radius-sm);color:var(--primary-color);font-size:13px;cursor:pointer}
-        .timestamp-btn:hover{background:rgba(93,92,222,0.2)}
-        .add-button{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background-color:var(--primary-color);color:white;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(93,92,222,0.4);z-index:100;display:flex;align-items:center;justify-content:center}
-        .add-button:active{transform:scale(0.92)}
-        .export-section{margin-top:20px;background:var(--card-color);padding:16px;border-radius:var(--radius);box-shadow:var(--shadow)}
-        .export-section button{width:100%;padding:12px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
-        .export-section button:last-child{margin-bottom:0}
-        .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all 0.3s}
-        .modal-overlay.active{opacity:1;visibility:visible}
-        .modal{background:var(--card-color);border-radius:var(--radius);width:90%;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2);transform:translateY(20px);transition:transform 0.3s}
-        .modal-overlay.active .modal{transform:translateY(0)}
-        .modal-header{padding:20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}
-        .modal-header h3{font-size:20px}
-        .modal-close{background:none;border:none;font-size:24px;cursor:pointer}
-        .modal-body{padding:20px}
-        .modal-footer{padding:20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:12px}
-        .modal-btn{padding:10px 20px;border-radius:var(--radius-sm);border:none;font-size:16px;cursor:pointer}
-        .modal-btn.primary{background:var(--primary-color);color:white}
-        .modal-btn.secondary{background:var(--card-color);border:1px solid var(--border-color);color:var(--text-primary)}
-        @media (max-width:480px){.container{padding:0 12px}.header{padding:12px 0}.logo{font-size:20px}.editor-toolbar button{padding:4px 6px;font-size:12px;min-width:26px}}
-        [data-theme="dark"] .search-box{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23AAAAAA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E")}
-        [data-theme="dark"] .lock-card{background:#1E1E1E}
-        [data-theme="dark"] .ProseMirror pre{background:#1e1e1e}
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        :root {
+            --primary-color: #5D5CDE; --secondary-color: #8A8AFF; --bg-color: #F8F9FA; --card-color: #FFFFFF;
+            --text-primary: #333333; --text-secondary: #777777; --border-color: #E0E0E0; --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            --radius: 12px; --radius-sm: 8px; --danger-color: #FF3B30; --success-color: #34C759; --toolbar-bg: #f5f5f7;
+            --safe-area-bottom: env(safe-area-inset-bottom);
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --card-color: #1E1E1E; --text-primary: #E0E0E0; --text-secondary: #AAAAAA;
+            --border-color: #333333; --shadow: 0 2px 12px rgba(0,0,0,0.3); --toolbar-bg: #2a2a2a;
+        }
+        body { background-color: var(--bg-color); color: var(--text-primary); line-height: 1.5; overflow-x: hidden; }
+        .container { max-width: 800px; margin: 0 auto; padding: 0 16px; }
+
+        .lock-screen {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-color); z-index: 5000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; transition: opacity 0.4s ease;
+        }
+        .lock-screen.hide { opacity: 0; pointer-events: none; }
+        .lock-card {
+            background: var(--card-color); padding: 32px 28px; border-radius: var(--radius); box-shadow: var(--shadow);
+            width: 100%; max-width: 360px; text-align: center;
+        }
+        .lock-card i { font-size: 48px; color: var(--primary-color); margin-bottom: 16px; }
+        .lock-card h2 { margin-bottom: 8px; }
+        .lock-card p { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+        .lock-input { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 16px; margin-bottom: 12px; text-align: center; background: var(--card-color); color: var(--text-primary); }
+        .lock-input:focus { outline: none; border-color: var(--primary-color); }
+        .lock-btn { width: 100%; padding: 14px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .lock-btn:active { background: var(--secondary-color); }
+        .lock-error { color: var(--danger-color); font-size: 13px; margin-top: 12px; display: none; }
+
+        .header { background-color: var(--card-color); padding: 16px 0; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); border-bottom: 1px solid var(--border-color); }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: 700; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
+        .header-actions { display: flex; gap: 8px; }
+        .icon-btn { background: none; border: none; font-size: 20px; color: var(--text-secondary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .icon-btn:active { background-color: rgba(0, 0, 0, 0.1); }
+        .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .main-content { padding: 20px 0 80px; }
+
+        .search-container { margin-bottom: 16px; position: relative; display: none; }
+        .search-box { width: 100%; padding: 14px 20px 14px 48px; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 16px; background-color: var(--card-color); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23777777' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 14px center; background-size: 18px; }
+        .search-box:focus { outline: none; border-color: var(--primary-color); }
+
+        .clear-search { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; display: none; cursor: pointer; color: var(--text-secondary); }
+
+        .categories { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; white-space: nowrap; }
+        .category-btn { padding: 8px 16px; background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
+        .category-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        .notes-list { display: flex; flex-direction: column; gap: 12px; }
+        .note-item { background-color: var(--card-color); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); cursor: pointer; border-left: 4px solid var(--primary-color); transition: transform 0.1s; }
+        .note-item:active { transform: scale(0.98); }
+        .note-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .note-content-preview { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .note-footer { display: flex; justify-content: space-between; align-items: center; }
+        .note-time { font-size: 12px; color: var(--text-secondary); }
+        .note-category { font-size: 11px; padding: 2px 8px; border-radius: 10px; background-color: rgba(93, 92, 222, 0.1); color: var(--primary-color); }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; color: #DDD; }
+
+        /* === 编辑器区域 === */
+        .editor-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--card-color);
+            z-index: 1000; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column;
+            overflow: hidden; 
+            overscroll-behavior: contain;
+        }
+        .editor-container.active { transform: translateX(0); }
+        .editor-container.swiping { transition: none; }
+        .editor-header {
+            padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+            padding-top: max(12px, env(safe-area-inset-top));
+        }
+        .editor-actions { display: flex; gap: 8px; }
+        .editor-header .auto-save-status {
+            flex: 1; text-align: center; font-size: 12px; color: var(--text-secondary);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .editor-header .auto-save-status.show { opacity: 1; }
+
+        .editor-content { 
+            flex: 1; padding: 16px; display: flex; flex-direction: column; 
+            min-height: 0; 
+            overflow: hidden; 
+        }
+        
+        .title-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+        }
+        .note-title-input {
+            width: 100%; font-size: 22px; font-weight: 600; border: none; outline: none;
+            background: transparent; color: var(--text-primary); margin-bottom: 0; flex: 1; min-width: 0;
+        }
+        .category-select {
+            width: auto; max-width: 120px; padding: 6px 10px; font-size: 14px;
+            border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+            background: var(--card-color); color: var(--text-primary);
+        }
+
+        .toolbar-toggle-container { text-align: center; margin-bottom: 12px; }
+        .toolbar-toggle-btn {
+            background: transparent; border: 1px dashed var(--border-color);
+            color: var(--text-secondary); padding: 4px 12px; border-radius: 12px;
+            font-size: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .toolbar-toggle-btn:active { background: var(--toolbar-bg); color: var(--primary-color); }
+
+        .editor-toolbar {
+            display: none; flex-wrap: wrap; gap: 4px; padding: 6px 8px;
+            background: var(--toolbar-bg); border-radius: var(--radius-sm);
+            margin-bottom: 12px; border: 1px solid var(--border-color);
+        }
+        .toolbar-group { display: flex; gap: 2px; padding-right: 6px; margin-right: 6px; border-right: 1px solid var(--border-color); }
+        .toolbar-group:last-child { border-right: none; margin-right: 0; }
+        .editor-toolbar button {
+            background: transparent; border: none; padding: 6px 8px; border-radius: 4px;
+            color: var(--text-secondary); font-size: 14px; cursor: pointer; min-width: 30px;
+            transition: all 0.15s ease;
+        }
+        .editor-toolbar button:hover { background: rgba(93,92,222,0.1); color: var(--primary-color); }
+        .editor-toolbar button.is-active { background: var(--primary-color); color: white; }
+        .color-picker-group label { display: flex; align-items: center; gap: 2px; cursor: pointer; font-size: 12px; color: var(--text-secondary); }
+        .color-picker-group input[type="color"] { width: 24px; height: 24px; border: none; background: transparent; cursor: pointer; padding: 0; }
+        .editor-toolbar select { padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; background: var(--card-color); color: var(--text-primary); }
+
+        #tiptap-editor { 
+            flex: 1; font-size: 16px; line-height: 1.6; outline: none; padding-bottom: 40px; 
+            min-height: 0; 
+            overflow-y: auto; 
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        .ProseMirror { outline: none; min-height: 100%; }
+        .ProseMirror p { margin: 0 0 0.5em 0; }
+        .ProseMirror h1 { font-size: 1.5em; margin: 0.5em 0 0.3em; }
+        .ProseMirror h2 { font-size: 1.3em; margin: 0.5em 0 0.3em; }
+        .ProseMirror ul, .ProseMirror ol { padding-left: 1.5em; margin: 0 0 0.5em 0; }
+        .ProseMirror blockquote { border-left: 3px solid var(--border-color); padding-left: 1em; color: var(--text-secondary); margin: 0 0 0.5em 0; }
+        .ProseMirror code { background: rgba(175, 184, 193, 0.2); border-radius: 4px; padding: 0.2em 0.4em; font-size: 0.9em; }
+        .ProseMirror pre { background: #f6f8fa; border-radius: 6px; padding: 1em; margin: 0 0 0.5em 0; overflow: auto; }
+        .ProseMirror img { max-width: 100%; height: auto; border-radius: 8px; }
+
+        .timestamp-toolbar { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .timestamp-btn {
+            padding: 6px 12px; background: rgba(93,92,222,0.1); border: 1px solid rgba(93,92,222,0.2);
+            border-radius: var(--radius-sm); color: var(--primary-color); font-size: 13px; cursor: pointer;
+        }
+        .timestamp-btn:hover { background: rgba(93,92,222,0.2); }
+
+        .add-button {
+            position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%;
+            background-color: var(--primary-color); color: white; border: none; font-size: 24px; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(93, 92, 222, 0.4); z-index: 100; display: flex; align-items: center; justify-content: center;
+        }
+        .add-button:active { transform: scale(0.92); }
+
+        /* 注意：.editor-image-btn 已移除，图片按钮已移入工具栏 */
+
+        .export-section { margin-top: 20px; background: var(--card-color); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); }
+        .export-section button { width: 100%; padding: 12px; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 8px; }
+        .export-section button:last-child { margin-bottom: 0; }
+
+        .modal-overlay {
+            position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index:2000;
+            display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--card-color); border-radius: var(--radius); width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 20px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; }
+        .modal-btn { padding: 10px 20px; border-radius: var(--radius-sm); border: none; font-size: 16px; cursor: pointer; }
+        .modal-btn.primary { background: var(--primary-color); color: white; }
+        .modal-btn.secondary { background: var(--card-color); border: 1px solid var(--border-color); color: var(--text-primary); }
+
+        @media (max-width: 480px) {
+            .container { padding: 0 12px; }
+            .header { padding: 12px 0; }
+            .logo { font-size: 20px; }
+            .editor-toolbar button { padding: 4px 6px; font-size: 12px; min-width: 26px; }
+        }
+
+        [data-theme="dark"] .search-box {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23AAAAAA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+        }
+        [data-theme="dark"] .lock-card { background: #1E1E1E; }
+        [data-theme="dark"] .ProseMirror pre { background: #1e1e1e; }
     </style>
 </head>
 <body>
-    <!-- 锁屏界面 -->
     <div class="lock-screen" id="lockScreen">
         <div class="lock-card">
             <i class="fas fa-lock"></i>
@@ -122,398 +225,205 @@
         </div>
     </div>
 
-    <!-- 主界面 -->
-    <div id="appContent">
-        <header class="header">
-            <div class="container">
-                <div class="header-content">
-                    <div class="logo"><i class="fas fa-book"></i> <span>素记</span></div>
-                    <div class="header-actions">
-                        <button class="icon-btn" id="searchBtn" title="搜索"><i class="fas fa-search"></i></button>
-                        <button class="icon-btn" id="categoryManageBtn" title="管理分类"><i class="fas fa-tags"></i></button>
-                        <button class="icon-btn" id="exportBtn" title="导出/导入"><i class="fas fa-file-export"></i></button>
-                        <button class="icon-btn" id="themeBtn" title="切换主题"><i class="fas fa-moon"></i></button>
-                    </div>
-                </div>
-            </div>
-        </header>
-        <main class="main-content">
-            <div class="container">
-                <div class="search-container" id="searchContainer">
-                    <input type="text" class="search-box" id="searchInput" placeholder="搜索标题、内容或分类...">
-                    <button class="clear-search" id="clearSearch"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="categories" id="categories"></div>
-                <div class="notes-list" id="notesList"></div>
-                <div class="export-section" id="exportSection" style="display:none;">
-                    <h3 style="margin-bottom:12px;"><i class="fas fa-file-export"></i> 数据管理</h3>
-                    <button class="lock-btn" id="exportJsonBtn" style="background:var(--text-secondary);">📥 导出 JSON (明文)</button>
-                    <button class="lock-btn" id="exportMarkdownBtn" style="background:var(--secondary-color);">📄 导出 Markdown</button>
-                    <button class="lock-btn" id="importJsonBtn" style="background:var(--primary-color);">📤 导入 JSON</button>
-                    <button class="lock-btn" id="backupBtn" style="background:var(--success-color);">💾 创建备份</button>
-                    <button class="lock-btn" id="clearDataBtn" style="background:var(--danger-color);">🗑️ 清除所有数据</button>
-                </div>
-            </div>
-        </main>
-        <div class="editor-container" id="editorContainer">
-            <div class="editor-header">
-                <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
-                <div class="auto-save-status" id="autoSaveStatus">已保存</div>
-                <div class="editor-actions">
-                    <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
-                    <button class="icon-btn" id="saveNote" title="保存"><i class="fas fa-check"></i></button>
-                    <button class="icon-btn" id="deleteNote" title="删除"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-            <div class="editor-content">
-                <div class="title-row">
-                    <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
-                    <select class="category-select" id="categorySelect"></select>
-                </div>
-                <div class="toolbar-toggle-container">
-                    <button id="toggleToolbarBtn" class="toolbar-toggle-btn"><i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span></button>
-                </div>
-                <div class="editor-toolbar" id="editorToolbar">
-                    <div class="toolbar-group">
-                        <button data-action="toggleBold" title="加粗"><i class="fas fa-bold"></i></button>
-                        <button data-action="toggleItalic" title="斜体"><i class="fas fa-italic"></i></button>
-                        <button data-action="toggleUnderline" title="下划线"><i class="fas fa-underline"></i></button>
-                        <button data-action="toggleStrike" title="删除线"><i class="fas fa-strikethrough"></i></button>
-                        <button data-action="toggleCode" title="行内代码"><i class="fas fa-code"></i></button>
-                        <button data-action="unsetAllMarks" title="清除格式"><i class="fas fa-eraser"></i></button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button data-action="setHeading-1">H1</button>
-                        <button data-action="setHeading-2">H2</button>
-                        <button data-action="setHeading-3">H3</button>
-                        <button data-action="setParagraph">P</button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button data-action="toggleBulletList"><i class="fas fa-list-ul"></i></button>
-                        <button data-action="toggleOrderedList"><i class="fas fa-list-ol"></i></button>
-                        <button data-action="toggleBlockquote"><i class="fas fa-quote-right"></i></button>
-                        <button data-action="toggleCodeBlock"><i class="fas fa-code-branch"></i></button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button data-action="setTextAlign-left"><i class="fas fa-align-left"></i></button>
-                        <button data-action="setTextAlign-center"><i class="fas fa-align-center"></i></button>
-                        <button data-action="setTextAlign-right"><i class="fas fa-align-right"></i></button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button data-action="indent"><i class="fas fa-indent"></i></button>
-                        <button data-action="outdent"><i class="fas fa-outdent"></i></button>
-                    </div>
-                    <div class="toolbar-group color-picker-group">
-                        <label><i class="fas fa-palette"></i> <input type="color" id="textColorPicker" value="#333333"></label>
-                        <label><i class="fas fa-highlighter"></i> <input type="color" id="textBgColorPicker" value="#FFFF00"></label>
-                        <select id="fontSizeSelect">
-                            <option value="12">12</option><option value="14">14</option><option value="16" selected>16</option>
-                            <option value="18">18</option><option value="20">20</option><option value="24">24</option>
-                            <option value="28">28</option><option value="32">32</option><option value="36">36</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="tiptap-editor"></div>
-                <div class="timestamp-toolbar" id="timestampToolbar" style="display:none;">
-                    <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
-                    <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
-                    <button class="timestamp-btn" data-format="time"><i class="fas fa-clock"></i> 时间</button>
-                    <button class="timestamp-btn" data-format="week"><i class="fas fa-calendar-week"></i> 星期</button>
-                    <button class="timestamp-btn" data-format="custom"><i class="fas fa-pen"></i> 自定义格式</button>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo"><i class="fas fa-book"></i> <span>素记</span></div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="searchBtn" title="搜索"><i class="fas fa-search"></i></button>
+                    <button class="icon-btn" id="categoryManageBtn" title="管理分类"><i class="fas fa-tags"></i></button>
+                    <button class="icon-btn" id="exportBtn" title="导出/导入"><i class="fas fa-file-export"></i></button>
+                    <button class="icon-btn" id="themeBtn" title="切换主题"><i class="fas fa-moon"></i></button>
                 </div>
             </div>
         </div>
-        <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="search-container" id="searchContainer">
+                <input type="text" class="search-box" id="searchInput" placeholder="搜索标题、内容或分类...">
+                <button class="clear-search" id="clearSearch"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="categories" id="categories"></div>
+            <div class="notes-list" id="notesList"></div>
+
+            <div class="export-section" id="exportSection" style="display: none;">
+                <h3 style="margin-bottom:12px;"><i class="fas fa-file-export"></i> 数据管理</h3>
+                <button class="lock-btn" id="exportJsonBtn" style="background: var(--text-secondary);">📥 导出 JSON (明文)</button>
+                <button class="lock-btn" id="exportMarkdownBtn" style="background: var(--secondary-color);">📄 导出 Markdown</button>
+                <button class="lock-btn" id="importJsonBtn" style="background: var(--primary-color);">📤 导入 JSON</button>
+                <button class="lock-btn" id="backupBtn" style="background: var(--success-color);">💾 创建备份</button>
+                <button class="lock-btn" id="clearDataBtn" style="background: var(--danger-color);">🗑️ 清除所有数据</button>
+            </div>
+
+            <div class="settings-section" id="settingsSection" style="display: none; margin-top: 20px; background: var(--card-color); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow);">
+                <h3><i class="fas fa-cog"></i> 设置</h3>
+                <div class="setting-item" style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>自动保存间隔（秒）</label>
+                    <div><input type="number" id="autoSaveIntervalInput" value="3" min="1" max="300" style="width:60px;padding:4px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"> 秒</div>
+                </div>
+                <div class="setting-item" style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>显示自动保存状态</label>
+                    <div><input type="checkbox" id="autoSaveShowStatus" checked></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="editor-container" id="editorContainer">
+        <div class="editor-header">
+            <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
+            <div class="auto-save-status" id="autoSaveStatus">已保存</div>
+            <div class="editor-actions">
+                <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
+                <button class="icon-btn" id="saveNote" title="保存"><i class="fas fa-check"></i></button>
+                <button class="icon-btn" id="deleteNote" title="删除"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        <div class="editor-content">
+            <div class="title-row">
+                <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
+                <select class="category-select" id="categorySelect"></select>
+            </div>
+
+            <div class="toolbar-toggle-container">
+                <button id="toggleToolbarBtn" class="toolbar-toggle-btn">
+                    <i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span>
+                </button>
+            </div>
+
+            <div class="editor-toolbar" id="editorToolbar">
+                <div class="toolbar-group">
+                    <button data-action="toggleBold" title="加粗"><i class="fas fa-bold"></i></button>
+                    <button data-action="toggleItalic" title="斜体"><i class="fas fa-italic"></i></button>
+                    <button data-action="toggleUnderline" title="下划线"><i class="fas fa-underline"></i></button>
+                    <button data-action="toggleStrike" title="删除线"><i class="fas fa-strikethrough"></i></button>
+                    <button data-action="toggleCode" title="行内代码"><i class="fas fa-code"></i></button>
+                    <button data-action="unsetAllMarks" title="清除格式"><i class="fas fa-eraser"></i></button>
+                </div>
+                <div class="toolbar-group">
+                    <button data-action="setHeading-1">H1</button>
+                    <button data-action="setHeading-2">H2</button>
+                    <button data-action="setHeading-3">H3</button>
+                    <button data-action="setParagraph">P</button>
+                </div>
+                <div class="toolbar-group">
+                    <button data-action="toggleBulletList"><i class="fas fa-list-ul"></i></button>
+                    <button data-action="toggleOrderedList"><i class="fas fa-list-ol"></i></button>
+                    <button data-action="toggleBlockquote"><i class="fas fa-quote-right"></i></button>
+                    <button data-action="toggleCodeBlock"><i class="fas fa-code-branch"></i></button>
+                </div>
+                <div class="toolbar-group">
+                    <button data-action="setTextAlign-left"><i class="fas fa-align-left"></i></button>
+                    <button data-action="setTextAlign-center"><i class="fas fa-align-center"></i></button>
+                    <button data-action="setTextAlign-right"><i class="fas fa-align-right"></i></button>
+                </div>
+                <div class="toolbar-group">
+                    <button data-action="indent"><i class="fas fa-indent"></i></button>
+                    <button data-action="outdent"><i class="fas fa-outdent"></i></button>
+                </div>
+                <div class="toolbar-group color-picker-group">
+                    <label><i class="fas fa-palette"></i> <input type="color" id="textColorPicker" value="#333333"></label>
+                    <label><i class="fas fa-highlighter"></i> <input type="color" id="textBgColorPicker" value="#FFFF00"></label>
+                    <select id="fontSizeSelect">
+                        <option value="12">12</option>
+                        <option value="14">14</option>
+                        <option value="16" selected>16</option>
+                        <option value="18">18</option>
+                        <option value="20">20</option>
+                        <option value="24">24</option>
+                        <option value="28">28</option>
+                        <option value="32">32</option>
+                        <option value="36">36</option>
+                    </select>
+                </div>
+                <!-- 新增：图片插入按钮，放在工具栏最右侧 -->
+                <div class="toolbar-group">
+                    <button data-action="insertImage" title="插入图片">
+                        <i class="fas fa-image"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="tiptap-editor"></div>
+
+            <div class="timestamp-toolbar" id="timestampToolbar" style="display: none;">
+                <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
+                <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
+                <button class="timestamp-btn" data-format="time"><i class="fas fa-clock"></i> 时间</button>
+                <button class="timestamp-btn" data-format="week"><i class="fas fa-calendar-week"></i> 星期</button>
+                <button class="timestamp-btn" data-format="custom"><i class="fas fa-pen"></i> 自定义格式</button>
+            </div>
+        </div>
+
+        <!-- 浮动图片按钮已移除，图片功能已整合到工具栏中 -->
     </div>
 
+    <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
+
     <!-- 模态框 -->
-    <div class="modal-overlay" id="categoryManageModal"><div class="modal"><div class="modal-header"><h3><i class="fas fa-tags"></i> 管理分类</h3><button class="modal-close" id="closeCategoryManageModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><div id="categoryList"></div><div style="display:flex;gap:8px;margin-top:12px;"><input type="text" id="newCategoryName" placeholder="新分类名称" style="flex:1;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"><input type="color" id="newCategoryColor" value="#5D5CDE" style="width:40px;height:40px;border:none;cursor:pointer;"><button class="lock-btn" id="addNewCategoryBtn" style="flex:0 0 auto;background:var(--primary-color);">添加</button></div></div></div></div>
-    <div class="modal-overlay" id="customTimestampModal"><div class="modal"><div class="modal-header"><h3>自定义时间戳格式</h3><button class="modal-close" id="closeCustomTimestampModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><div><label>格式字符串:</label><input type="text" id="customFormatInput" value="YYYY年MM月DD日 HH:mm:ss" style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"></div><div style="margin-top:12px;"><label>预览:</label><div id="formatPreview" style="padding:8px;background:rgba(93,92,222,0.05);border-radius:4px;"></div></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH:mm:ss">标准</button><button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH时mm分">中文</button><button class="timestamp-btn" data-preset="DD/MM/YYYY">日期</button><button class="timestamp-btn" data-preset="HH:mm:ss">时间</button></div></div><div class="modal-footer"><button class="modal-btn secondary" id="cancelCustomTimestamp">取消</button><button class="modal-btn primary" id="insertCustomTimestamp">插入</button></div></div></div>
-    <div class="modal-overlay" id="importModal"><div class="modal"><div class="modal-header"><h3>导入笔记</h3><button class="modal-close" id="closeImportModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><p>请选择要导入的文件格式：</p><div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;"><button class="lock-btn" id="importJsonBtn2" style="background:var(--primary-color);">导入 JSON 文件</button><button class="lock-btn" id="importTxtBtn" style="background:var(--secondary-color);">导入 Markdown 文件</button></div><p style="font-size:12px;color:var(--text-secondary);margin-top:12px;">注意：导入会添加新笔记，不会删除现有笔记。</p></div></div></div>
-    <div class="modal-overlay" id="clearDataModal"><div class="modal"><div class="modal-header"><h3><i class="fas fa-exclamation-triangle" style="color:var(--danger-color);"></i> 清除所有数据</h3><button class="modal-close" id="closeClearDataModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><p>您确定要清除所有笔记数据吗？此操作无法撤销！</p><p style="color:var(--danger-color);font-weight:500;">所有笔记将被永久删除。</p></div><div class="modal-footer"><button class="modal-btn secondary" id="cancelClearData">取消</button><button class="modal-btn danger" id="confirmClearData" style="background:var(--danger-color);color:white;">清除所有数据</button></div></div></div>
+    <div class="modal-overlay" id="categoryManageModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class="fas fa-tags"></i> 管理分类</h3><button class="modal-close" id="closeCategoryManageModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <div id="categoryList"></div>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <input type="text" id="newCategoryName" placeholder="新分类名称" style="flex:1;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);">
+                    <input type="color" id="newCategoryColor" value="#5D5CDE" style="width:40px;height:40px;border:none;cursor:pointer;">
+                    <button class="lock-btn" id="addNewCategoryBtn" style="flex:0 0 auto;background:var(--primary-color);">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        // ===== 完全独立的锁屏脚本（离线可用） =====
-        (function() {
-            'use strict';
+    <div class="modal-overlay" id="customTimestampModal">
+        <div class="modal">
+            <div class="modal-header"><h3>自定义时间戳格式</h3><button class="modal-close" id="closeCustomTimestampModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <div><label>格式字符串:</label><input type="text" id="customFormatInput" value="YYYY年MM月DD日 HH:mm:ss" style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"></div>
+                <div style="margin-top:12px;"><label>预览:</label><div id="formatPreview" style="padding:8px;background:rgba(93,92,222,0.05);border-radius:4px;"></div></div>
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH:mm:ss">标准</button>
+                    <button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH时mm分">中文</button>
+                    <button class="timestamp-btn" data-preset="DD/MM/YYYY">日期</button>
+                    <button class="timestamp-btn" data-preset="HH:mm:ss">时间</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="cancelCustomTimestamp">取消</button>
+                <button class="modal-btn primary" id="insertCustomTimestamp">插入</button>
+            </div>
+        </div>
+    </div>
 
-            class CryptoManager {
-                constructor() { this.key = null; }
-                async deriveKey(password, salt) {
-                    const enc = new TextEncoder();
-                    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
-                    this.key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-                    return this.key;
-                }
-                bufferToBase64(buffer) {
-                    return new Promise((resolve) => {
-                        const blob = new Blob([buffer]); const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result.split(',')[1]); reader.readAsDataURL(blob);
-                    });
-                }
-                async base64ToBuffer(base64) {
-                    const response = await fetch(`data:application/octet-stream;base64,${base64}`);
-                    return await response.arrayBuffer();
-                }
-                async encrypt(data) {
-                    if (!this.key) return data;
-                    try {
-                        const iv = crypto.getRandomValues(new Uint8Array(12));
-                        const encoded = new TextEncoder().encode(JSON.stringify(data));
-                        const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.key, encoded);
-                        const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-                        combined.set(iv, 0); combined.set(new Uint8Array(ciphertext), iv.length);
-                        return await this.bufferToBase64(combined.buffer);
-                    } catch (e) { return null; }
-                }
-                async decrypt(base64Str) {
-                    if (!this.key || typeof base64Str !== 'string') return base64Str;
-                    try {
-                        const buffer = await this.base64ToBuffer(base64Str);
-                        const combined = new Uint8Array(buffer);
-                        const iv = combined.slice(0, 12); const ciphertext = combined.slice(12);
-                        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, this.key, ciphertext);
-                        return JSON.parse(new TextDecoder().decode(decrypted));
-                    } catch (e) { return null; }
-                }
-            }
+    <div class="modal-overlay" id="importModal">
+        <div class="modal">
+            <div class="modal-header"><h3>导入笔记</h3><button class="modal-close" id="closeImportModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <p>请选择要导入的文件格式：</p>
+                <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
+                    <button class="lock-btn" id="importJsonBtn2" style="background:var(--primary-color);">导入 JSON 文件</button>
+                    <button class="lock-btn" id="importTxtBtn" style="background:var(--secondary-color);">导入 Markdown 文件</button>
+                </div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-top:12px;">注意：导入会添加新笔记，不会删除现有笔记。</p>
+            </div>
+        </div>
+    </div>
 
-            class DBManager {
-                constructor(crypto) { this.dbName = 'EncryptedNotesDB'; this.dbVersion = 1; this.db = null; this.crypto = crypto; }
-                open() {
-                    return new Promise((resolve, reject) => {
-                        const req = indexedDB.open(this.dbName, this.dbVersion);
-                        req.onupgradeneeded = e => {
-                            const db = e.target.result;
-                            if (!db.objectStoreNames.contains('notes')) {
-                                const store = db.createObjectStore('notes', { keyPath: 'id' });
-                                store.createIndex('category', 'category', { unique: false });
-                            }
-                            if (!db.objectStoreNames.contains('categories')) db.createObjectStore('categories', { keyPath: 'id' });
-                            if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
-                        };
-                        req.onsuccess = e => { this.db = e.target.result; resolve(); };
-                        req.onerror = e => reject(e.target.error);
-                    });
-                }
-                _tx(store, mode = 'readonly') { return this.db.transaction(store, mode).objectStore(store); }
-                getSetting(key) { return new Promise(res => { const r = this._tx('settings').get(key); r.onsuccess = () => res(r.result?.value); r.onerror = () => res(null); }); }
-                setSetting(key, value) { return new Promise(res => { this._tx('settings', 'readwrite').put({ key, value }); res(); }); }
-                async saveNote(note) {
-                    const noteToSave = { ...note };
-                    if (noteToSave.content) { noteToSave.encryptedContent = await this.crypto.encrypt(noteToSave.content); delete noteToSave.content; }
-                    return new Promise((resolve, reject) => { const req = this._tx('notes', 'readwrite').put(noteToSave); req.onsuccess = () => resolve(noteToSave); req.onerror = () => reject(req.error); });
-                }
-                async getNote(id) { return new Promise((resolve, reject) => { const req = this._tx('notes').get(id); req.onsuccess = async () => { const note = req.result; if (note && note.encryptedContent) { note.content = await this.crypto.decrypt(note.encryptedContent); } resolve(note); }; req.onerror = () => reject(req.error); }); }
-                async getAllNotes() {
-                    return new Promise((resolve, reject) => {
-                        const req = this._tx('notes').getAll();
-                        req.onsuccess = async () => {
-                            const notes = req.result;
-                            for (let note of notes) { if (note.encryptedContent) { note.content = await this.crypto.decrypt(note.encryptedContent); } }
-                            notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-                            resolve(notes);
-                        };
-                        req.onerror = () => reject(req.error);
-                    });
-                }
-                async deleteNote(id) { return new Promise(res => { this._tx('notes', 'readwrite').delete(id); res(); }); }
-                async clearAll() { return new Promise(res => { this._tx('notes', 'readwrite').clear(); this._tx('categories', 'readwrite').clear(); this._tx('settings', 'readwrite').clear(); res(); }); }
-                getAllCategories() {
-                    return new Promise(async (res) => {
-                        const r = this._tx('categories').getAll();
-                        r.onsuccess = async () => {
-                            let cats = r.result || [];
-                            let needUpdate = false;
-                            cats.forEach((c, i) => {
-                                if (c.order === undefined) { c.order = i; needUpdate = true; }
-                            });
-                            if (needUpdate) {
-                                for (let c of cats) await this.saveCategory(c);
-                            }
-                            cats.sort((a, b) => (a.order || 0) - (b.order || 0));
-                            res(cats);
-                        };
-                        r.onerror = () => res([]);
-                    });
-                }
-                saveCategory(cat) { return new Promise((resolve, reject) => { const req = this._tx('categories', 'readwrite').put(cat); req.onsuccess = () => resolve(cat); req.onerror = () => reject(req.error); }); }
-                deleteCategory(id) { return new Promise(res => { this._tx('categories', 'readwrite').delete(id); res(); }); }
-            }
-
-            // 工具函数
-            function extractText(json) { if (!json || typeof json !== 'object') return ''; let text = ''; const stack = [json]; while (stack.length > 0) { const node = stack.pop(); if (!node) continue; if (node.type === 'text' && node.text) { text += node.text + ' '; } if (Array.isArray(node.content)) { for (let i = node.content.length - 1; i >= 0; i--) { stack.push(node.content[i]); } } } return text.trim(); }
-            function convertPlainToJSON(text) { const trimmed = (text || '').trim(); return { type: 'doc', content: [{ type: 'paragraph', content: trimmed ? [{ type: 'text', text: trimmed }] : [] }] }; }
-            function formatDate(d) { const date = new Date(d); const now = new Date(); const diff = (now - date) / 60000; if (diff < 1) return '刚刚'; if (diff < 60) return `${Math.floor(diff)}分钟前`; if (diff < 1440) return `${Math.floor(diff / 60)}小时前`; if (diff < 10080) return `${Math.floor(diff / 1440)}天前`; return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }); }
-            function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-
-            window.SN = {
-                unlocked: false,
-                crypto: new CryptoManager(),
-                db: null,
-                initMainApp: null,
-                appInstance: null,
-                extractText, formatDate, escapeHtml, convertPlainToJSON
-            };
-
-            const lockScreen = document.getElementById('lockScreen');
-            const lockInput = document.getElementById('lockPasswordInput');
-            const lockBtn = document.getElementById('lockSubmitBtn');
-            const lockError = document.getElementById('lockError');
-            const lockTitle = document.getElementById('lockTitle');
-            const lockDesc = document.getElementById('lockDesc');
-
-            async function initLock() {
-                window.SN.db = new DBManager(window.SN.crypto);
-                await window.SN.db.open();
-                const isFirst = await checkFirstTime();
-                if (isFirst) {
-                    lockTitle.innerText = '设置主密码';
-                    lockDesc.innerText = '此密码用于加密您的日记，请牢记。丢失密码将无法恢复数据。';
-                    lockBtn.innerText = '设置并进入';
-                    lockInput.placeholder = '设置主密码 (至少4位)';
-                }
-                const saved = localStorage.getItem('simpleNotesTheme');
-                if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-            }
-
-            async function checkFirstTime() { const salt = await window.SN.db.getSetting('salt'); return !salt; }
-
-            // ===== 密码验证：结合 authCheck + 第一条笔记备用 =====
-            lockBtn.addEventListener('click', async () => {
-                const password = lockInput.value;
-                if (!password || password.length < 4) {
-                    lockError.textContent = '密码至少4位';
-                    lockError.style.display = 'block';
-                    return;
-                }
-                lockError.style.display = 'none';
-                lockBtn.disabled = true;
-                lockBtn.textContent = '验证中...';
-
-                try {
-                    const saltStr = await window.SN.db.getSetting('salt');
-                    if (!saltStr) {
-                        // 首次设置
-                        const salt = crypto.getRandomValues(new Uint8Array(16));
-                        await window.SN.crypto.deriveKey(password, salt);
-                        await window.SN.db.setSetting('salt', btoa(String.fromCharCode(...salt)));
-                        // 生成 authCheck
-                        const authCheck = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                        await window.SN.db.setSetting('authCheck', authCheck);
-                        await initDefaultData();
-                        await enterApp();
-                    } else {
-                        const salt = Uint8Array.from(atob(saltStr), c => c.charCodeAt(0));
-                        await window.SN.crypto.deriveKey(password, salt);
-
-                        let valid = false;
-                        // 1. 优先使用 authCheck
-                        const authCheck = await window.SN.db.getSetting('authCheck');
-                        if (authCheck) {
-                            const dec = await window.SN.crypto.decrypt(authCheck);
-                            if (dec === "AUTH_CHECK_SUCCESS") valid = true;
-                        }
-
-                        // 2. 若 authCheck 无效，降级到第一条笔记解密（兼容旧数据）
-                        if (!valid) {
-                            const notes = await window.SN.db.getAllNotes();
-                            if (notes.length > 0 && notes[0].encryptedContent) {
-                                const test = await window.SN.crypto.decrypt(notes[0].encryptedContent);
-                                if (test !== null) valid = true;
-                            } else if (notes.length === 0) {
-                                // 空数据库：允许进入，但后续必须生成 authCheck
-                                valid = true;
-                                // 补写 authCheck
-                                const newAuth = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                                if (newAuth) await window.SN.db.setSetting('authCheck', newAuth);
-                            }
-                        }
-
-                        if (!valid) {
-                            lockError.textContent = '密码错误，请重试';
-                            lockError.style.display = 'block';
-                            lockBtn.disabled = false;
-                            lockBtn.textContent = '解锁';
-                            lockInput.value = '';
-                            lockInput.focus();
-                            window.SN.crypto.key = null;
-                            return;
-                        }
-                        await enterApp();
-                    }
-                } catch (e) {
-                    lockError.textContent = '验证失败，请重试';
-                    lockError.style.display = 'block';
-                    lockBtn.disabled = false;
-                    lockBtn.textContent = '重试';
-                    console.error(e);
-                }
-            });
-
-            lockInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') lockBtn.click(); });
-
-            async function initDefaultData() {
-                const cats = [
-                    { id: 'daily', name: '小可爱', color: '#5D5CDE', order: 0 },
-                    { id: 'work', name: '阅读', color: '#FF9500', order: 1 },
-                    { id: 'ideas', name: '随记', color: '#34C759', order: 2 },
-                    { id: 'memories', name: '计划', color: '#FF69B4', order: 3 },
-                    { id: 'other', name: '工作', color: '#9E9E9E', order: 4 }
-                ];
-                for (let cat of cats) await window.SN.db.saveCategory(cat);
-            }
-
-            async function enterApp() {
-                window.SN.unlocked = true;
-                // 先隐藏锁屏，让用户立即看到界面（后台初始化）
-                lockScreen.classList.add('hide');
-                // 如果主应用已加载则初始化，否则降级
-                if (typeof window.SN.initMainApp === 'function') {
-                    await window.SN.initMainApp(); // 异步接管，不阻塞界面响应
-                } else {
-                    await renderNotesFallback();
-                }
-            }
-
-            async function renderNotesFallback() {
-                try {
-                    let notes = await window.SN.db.getAllNotes();
-                    const notesList = document.getElementById('notesList');
-                    notesList.innerHTML = '';
-                    const banner = document.createElement('div');
-                    banner.className = 'offline-banner';
-                    banner.innerText = '离线模式：主程序未加载，暂不支持编辑。请连接网络后重试。';
-                    notesList.appendChild(banner);
-                    if (notes.length === 0) {
-                        notesList.innerHTML += `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
-                        return;
-                    }
-                    const categories = await window.SN.db.getAllCategories();
-                    const categoryMap = {};
-                    categories.forEach(c => { categoryMap[c.id] = c.name; });
-                    notes.forEach(n => {
-                        const div = document.createElement('div');
-                        div.className = 'note-item';
-                        const preview = window.SN.extractText(n.content).substring(0, 100);
-                        const categoryName = categoryMap[n.category] || '未分类';
-                        div.innerHTML = `
-                            <div class="note-title">${window.SN.escapeHtml(n.title || '未命名')}</div>
-                            <div class="note-content-preview">${window.SN.escapeHtml(preview)}</div>
-                            <div class="note-footer">
-                                <span class="note-time">${window.SN.formatDate(n.updatedAt)}</span>
-                                <span class="note-category">${window.SN.escapeHtml(categoryName)}</span>
-                            </div>
-                        `;
-                        div.addEventListener('click', () => alert('离线模式不支持编辑。'));
-                        notesList.appendChild(div);
-                    });
-                } catch (e) { console.error(e); }
-            }
-
-            initLock();
-        })();
-    </script>
+    <div class="modal-overlay" id="clearDataModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class="fas fa-exclamation-triangle" style="color:var(--danger-color);"></i> 清除所有数据</h3><button class="modal-close" id="closeClearDataModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <p>您确定要清除所有笔记数据吗？此操作无法撤销！</p>
+                <p style="color:var(--danger-color);font-weight:500;">所有笔记将被永久删除。</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="cancelClearData">取消</button>
+                <button class="modal-btn danger" id="confirmClearData" style="background:var(--danger-color);color:white;">清除所有数据</button>
+            </div>
+        </div>
+    </div>
 
     <script type="importmap">
     {
@@ -533,7 +443,6 @@
     </script>
 
     <script type="module">
-        // ===== 主应用 =====
         import { Editor, Extension, Mark, mergeAttributes } from '@tiptap/core';
         import StarterKit from '@tiptap/starter-kit';
         import Placeholder from '@tiptap/extension-placeholder';
@@ -545,55 +454,377 @@
         import ImageExtension from '@tiptap/extension-image';
 
         const FontSize = Mark.create({
-            name: 'fontSize', addOptions: { types: ['textStyle'] },
+            name: 'fontSize',
+            addOptions: { types: ['textStyle'] },
             parseHTML() { return [{ style: 'font-size' }]; },
             renderHTML({ HTMLAttributes }) { return ['span', mergeAttributes(HTMLAttributes), 0]; },
-            addAttributes() { return { fontSize: { default: null, parseHTML: el => el.style.fontSize || null, renderHTML: attrs => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {} } }; }
+            addAttributes() {
+                return {
+                    fontSize: {
+                        default: null,
+                        parseHTML: el => el.style.fontSize || null,
+                        renderHTML: attrs => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {}
+                    }
+                };
+            }
         });
 
         const Indent = Extension.create({
             name: 'indent',
-            addGlobalAttributes() { return [{ types: ['paragraph', 'heading'], attributes: { indent: { default: 0, parseHTML: el => Math.floor((parseInt(el.style.paddingLeft) || 0) / 20), renderHTML: attrs => attrs.indent ? { style: `padding-left: ${attrs.indent * 20}px` } : {} } } }]; },
-            addCommands() { return { indent: () => ({ state, dispatch }) => { const { from, to } = state.selection; let tr = state.tr, changed = false; state.doc.nodesBetween(from, to, (node, pos) => { if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) { const indent = Math.min((node.attrs.indent || 0) + 1, 3); tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent }); changed = true; } }); if (changed) { dispatch(tr); return true; } return false; }, outdent: () => ({ state, dispatch }) => { const { from, to } = state.selection; let tr = state.tr, changed = false; state.doc.nodesBetween(from, to, (node, pos) => { if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) { const indent = Math.max((node.attrs.indent || 0) - 1, 0); tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent }); changed = true; } }); if (changed) { dispatch(tr); return true; } return false; } }; }
+            addGlobalAttributes() {
+                return [{
+                    types: ['paragraph', 'heading'],
+                    attributes: {
+                        indent: {
+                            default: 0,
+                            parseHTML: el => Math.floor((parseInt(el.style.paddingLeft) || 0) / 20),
+                            renderHTML: attrs => attrs.indent ? { style: `padding-left: ${attrs.indent * 20}px` } : {}
+                        }
+                    }
+                }];
+            },
+            addCommands() {
+                return {
+                    indent: () => ({ state, dispatch }) => {
+                        const { from, to } = state.selection;
+                        let tr = state.tr, changed = false;
+                        state.doc.nodesBetween(from, to, (node, pos) => {
+                            if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) {
+                                const indent = Math.min((node.attrs.indent || 0) + 1, 3);
+                                tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
+                                changed = true;
+                            }
+                        });
+                        if (changed) { dispatch(tr); return true; }
+                        return false;
+                    },
+                    outdent: () => ({ state, dispatch }) => {
+                        const { from, to } = state.selection;
+                        let tr = state.tr, changed = false;
+                        state.doc.nodesBetween(from, to, (node, pos) => {
+                            if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) {
+                                const indent = Math.max((node.attrs.indent || 0) - 1, 0);
+                                tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
+                                changed = true;
+                            }
+                        });
+                        if (changed) { dispatch(tr); return true; }
+                        return false;
+                    }
+                };
+            }
         });
+
+        class CryptoManager {
+            constructor() { this.key = null; }
+            async deriveKey(password, salt) {
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+                this.key = await crypto.subtle.deriveKey(
+                    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                    keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']
+                );
+                return this.key;
+            }
+            
+            bufferToBase64(buffer) {
+                return new Promise((resolve) => {
+                    const blob = new Blob([buffer]);
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+            }
+
+            async base64ToBuffer(base64) {
+                const response = await fetch(`data:application/octet-stream;base64,${base64}`);
+                return await response.arrayBuffer();
+            }
+
+            async encrypt(data) {
+                if (!this.key) return data;
+                try {
+                    const iv = crypto.getRandomValues(new Uint8Array(12));
+                    const encoded = new TextEncoder().encode(JSON.stringify(data));
+                    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.key, encoded);
+                    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+                    combined.set(iv, 0);
+                    combined.set(new Uint8Array(ciphertext), iv.length);
+                    return await this.bufferToBase64(combined.buffer);
+                } catch (e) {
+                    console.error('加密失败:', e);
+                    return null;
+                }
+            }
+
+            async decrypt(base64Str) {
+                if (!this.key || typeof base64Str !== 'string') return base64Str;
+                try {
+                    const buffer = await this.base64ToBuffer(base64Str);
+                    const combined = new Uint8Array(buffer);
+                    const iv = combined.slice(0, 12);
+                    const ciphertext = combined.slice(12);
+                    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, this.key, ciphertext);
+                    return JSON.parse(new TextDecoder().decode(decrypted));
+                } catch (e) {
+                    console.error('解密失败:', e);
+                    return null;
+                }
+            }
+        }
+
+        class DBManager {
+            constructor(crypto) {
+                this.dbName = 'EncryptedNotesDB'; this.dbVersion = 1; this.db = null; this.crypto = crypto;
+            }
+            open() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(this.dbName, this.dbVersion);
+                    req.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('notes')) {
+                            const store = db.createObjectStore('notes', { keyPath: 'id' });
+                            store.createIndex('category', 'category', { unique: false });
+                            store.createIndex('updatedAt', 'updatedAt', { unique: false });
+                        }
+                        if (!db.objectStoreNames.contains('categories')) db.createObjectStore('categories', { keyPath: 'id' });
+                        if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+                    };
+                    req.onsuccess = e => { this.db = e.target.result; resolve(); };
+                    req.onerror = e => reject(e.target.error);
+                });
+            }
+            _tx(store, mode = 'readonly') { return this.db.transaction(store, mode).objectStore(store); }
+
+            getSetting(key) {
+                return new Promise(res => {
+                    const r = this._tx('settings').get(key);
+                    r.onsuccess = () => res(r.result?.value);
+                    r.onerror = () => res(null);
+                });
+            }
+            setSetting(key, value) {
+                return new Promise(res => {
+                    this._tx('settings', 'readwrite').put({ key, value });
+                    res();
+                });
+            }
+
+            async saveNote(note) {
+                const noteToSave = { ...note };
+                if (noteToSave.content) {
+                    noteToSave.encryptedContent = await this.crypto.encrypt(noteToSave.content);
+                    delete noteToSave.content;
+                }
+                return new Promise((resolve, reject) => {
+                    const req = this._tx('notes', 'readwrite').put(noteToSave);
+                    req.onsuccess = () => resolve(noteToSave);
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            async getNote(id) {
+                return new Promise((resolve, reject) => {
+                    const req = this._tx('notes').get(id);
+                    req.onsuccess = async () => {
+                        const note = req.result;
+                        if (note && note.encryptedContent) {
+                            note.content = await this.crypto.decrypt(note.encryptedContent);
+                            if (!note.content) {
+                                note.content = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '[解密失败]' }] }] };
+                            }
+                        }
+                        resolve(note);
+                    };
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            async getAllNotes() {
+                return new Promise((resolve, reject) => {
+                    const req = this._tx('notes').getAll();
+                    req.onsuccess = async () => {
+                        const notes = req.result;
+                        for (let note of notes) {
+                            if (note.encryptedContent) {
+                                const decrypted = await this.crypto.decrypt(note.encryptedContent);
+                                if (decrypted) {
+                                    note.content = decrypted;
+                                } else {
+                                    note.content = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '[解密失败]' }] }] };
+                                }
+                            }
+                        }
+                        notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                        resolve(notes);
+                    };
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            async deleteNote(id) {
+                return new Promise(res => {
+                    this._tx('notes', 'readwrite').delete(id);
+                    res();
+                });
+            }
+
+            async clearAll() {
+                return new Promise(res => {
+                    this._tx('notes', 'readwrite').clear();
+                    this._tx('categories', 'readwrite').clear();
+                    this._tx('settings', 'readwrite').clear();
+                    res();
+                });
+            }
+
+            getAllCategories() {
+                return new Promise(async (res) => {
+                    const r = this._tx('categories').getAll();
+                    r.onsuccess = async () => {
+                        let cats = r.result || [];
+                        let needUpdate = false;
+                        cats.forEach((c, i) => {
+                            if (c.order === undefined) {
+                                c.order = i;
+                                needUpdate = true;
+                            }
+                        });
+                        if (needUpdate) {
+                            for (let c of cats) await this.saveCategory(c);
+                        }
+                        cats.sort((a, b) => (a.order || 0) - (b.order || 0));
+                        res(cats);
+                    };
+                    r.onerror = () => res([]);
+                });
+            }
+            
+            saveCategory(cat) {
+                return new Promise((resolve, reject) => {
+                    const req = this._tx('categories', 'readwrite').put(cat);
+                    req.onsuccess = () => resolve(cat);
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            deleteCategory(id) {
+                return new Promise(res => {
+                    this._tx('categories', 'readwrite').delete(id);
+                    res();
+                });
+            }
+        }
+
+        function extractText(json) {
+            if (!json || typeof json !== 'object') return '';
+            let text = '';
+            const stack = [json];
+            while (stack.length > 0) {
+                const node = stack.pop();
+                if (!node) continue;
+                if (node.type === 'text' && node.text) {
+                    text += node.text + ' ';
+                }
+                if (Array.isArray(node.content)) {
+                    for (let i = node.content.length - 1; i >= 0; i--) {
+                        stack.push(node.content[i]);
+                    }
+                }
+            }
+            return text.trim();
+        }
+
+        function convertPlainToJSON(text) {
+            const trimmed = (text || '').trim();
+            return {
+                type: 'doc',
+                content: [{
+                    type: 'paragraph',
+                    content: trimmed ? [{ type: 'text', text: trimmed }] : []
+                }]
+            };
+        }
+
+        function formatDate(d) {
+            const date = new Date(d); const now = new Date(); const diff = (now - date) / 60000;
+            if (diff < 1) return '刚刚';
+            if (diff < 60) return `${Math.floor(diff)}分钟前`;
+            if (diff < 1440) return `${Math.floor(diff / 60)}小时前`;
+            if (diff < 10080) return `${Math.floor(diff / 1440)}天前`;
+            return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         function compressImage(file, maxWidth = 1200, quality = 0.8) {
             return new Promise((resolve) => {
-                if (!file.type.startsWith('image/') || file.size < 512 * 1024) { resolve(file); return; }
+                if (!file.type.startsWith('image/') || file.size < 512 * 1024) {
+                    resolve(file); return;
+                }
                 const url = URL.createObjectURL(file);
                 const img = new window.Image();
-                img.onload = () => { URL.revokeObjectURL(url); try { const canvas = document.createElement('canvas'); let w = img.width, h = img.height; if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; } canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h); canvas.toBlob((blob) => { if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' })); else resolve(file); }, 'image/jpeg', quality); } catch (e) { resolve(file); } };
-                img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    try {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        canvas.toBlob((blob) => {
+                            if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                            else resolve(file);
+                        }, 'image/jpeg', quality);
+                    } catch (e) {
+                        console.error('[图片] Canvas 压缩失败:', e);
+                        resolve(file);
+                    }
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    console.error('[图片] 加载失败，降级使用原图');
+                    resolve(file);
+                };
                 img.src = url;
             });
         }
 
         class App {
             constructor() {
-                this.crypto = window.SN.crypto;
-                this.db = window.SN.db;
+                this.crypto = new CryptoManager();
+                this.db = new DBManager(this.crypto);
                 this.editor = null;
                 this.currentFilter = 'all';
                 this.editingId = null;
                 this.autoSaveTimer = null;
                 this.lastSavedContent = '';
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
-                this.extractText = window.SN.extractText;
-                this.formatDate = window.SN.formatDate;
-                this.escapeHtml = window.SN.escapeHtml;
-                this.convertPlainToJSON = window.SN.convertPlainToJSON;
 
                 this.initElements();
-                // 注意：不再自动调用 init()，由外部显式调用
+                this.init();
             }
 
             initElements() {
                 this.els = {
+                    lockScreen: document.getElementById('lockScreen'),
+                    lockTitle: document.getElementById('lockTitle'),
+                    lockDesc: document.getElementById('lockDesc'),
+                    lockInput: document.getElementById('lockPasswordInput'),
+                    lockBtn: document.getElementById('lockSubmitBtn'),
+                    lockError: document.getElementById('lockError'),
                     notesList: document.getElementById('notesList'),
                     categories: document.getElementById('categories'),
                     searchContainer: document.getElementById('searchContainer'),
                     searchInput: document.getElementById('searchInput'),
                     clearSearch: document.getElementById('clearSearch'),
+                    exportSection: document.getElementById('exportSection'),
+                    settingsSection: document.getElementById('settingsSection'),
                     editorContainer: document.getElementById('editorContainer'),
                     noteTitleInput: document.getElementById('noteTitleInput'),
                     categorySelect: document.getElementById('categorySelect'),
@@ -607,11 +838,21 @@
                     deleteNote: document.getElementById('deleteNote'),
                     timestampBtn: document.getElementById('timestampBtn'),
                     timestampToolbar: document.getElementById('timestampToolbar'),
-                    editorImageBtn: document.getElementById('editorImageBtn'),
+                    // 注意：editorImageBtn 已移除，图片功能在工具栏中
                     searchBtn: document.getElementById('searchBtn'),
                     categoryManageBtn: document.getElementById('categoryManageBtn'),
                     exportBtn: document.getElementById('exportBtn'),
                     themeBtn: document.getElementById('themeBtn'),
+                    exportJsonBtn: document.getElementById('exportJsonBtn'),
+                    exportMarkdownBtn: document.getElementById('exportMarkdownBtn'),
+                    importJsonBtn: document.getElementById('importJsonBtn'),
+                    backupBtn: document.getElementById('backupBtn'),
+                    clearDataBtn: document.getElementById('clearDataBtn'),
+                    autoSaveIntervalInput: document.getElementById('autoSaveIntervalInput'),
+                    autoSaveShowStatus: document.getElementById('autoSaveShowStatus'),
+                    textColorPicker: document.getElementById('textColorPicker'),
+                    textBgColorPicker: document.getElementById('textBgColorPicker'),
+                    fontSizeSelect: document.getElementById('fontSizeSelect'),
                     categoryManageModal: document.getElementById('categoryManageModal'),
                     closeCategoryManageModal: document.getElementById('closeCategoryManageModal'),
                     categoryList: document.getElementById('categoryList'),
@@ -624,15 +865,6 @@
                     formatPreview: document.getElementById('formatPreview'),
                     cancelCustomTimestamp: document.getElementById('cancelCustomTimestamp'),
                     insertCustomTimestamp: document.getElementById('insertCustomTimestamp'),
-                    textColorPicker: document.getElementById('textColorPicker'),
-                    textBgColorPicker: document.getElementById('textBgColorPicker'),
-                    fontSizeSelect: document.getElementById('fontSizeSelect'),
-                    exportSection: document.getElementById('exportSection'),
-                    exportJsonBtn: document.getElementById('exportJsonBtn'),
-                    exportMarkdownBtn: document.getElementById('exportMarkdownBtn'),
-                    importJsonBtn: document.getElementById('importJsonBtn'),
-                    backupBtn: document.getElementById('backupBtn'),
-                    clearDataBtn: document.getElementById('clearDataBtn'),
                     importModal: document.getElementById('importModal'),
                     closeImportModal: document.getElementById('closeImportModal'),
                     importJsonBtn2: document.getElementById('importJsonBtn2'),
@@ -645,32 +877,153 @@
             }
 
             async init() {
+                await this.db.open();
+                this.bindLockScreen();
                 this.bindGlobalEvents();
-                this.bindEditorEvents();
                 this.setupViewport();
-                await this.renderCategories();
-                await this.renderNotes();
+            }
+
+            bindLockScreen() {
+                this.checkFirstTime().then(isFirst => {
+                    if (isFirst) {
+                        this.els.lockTitle.innerText = '设置主密码';
+                        this.els.lockDesc.innerText = '此密码用于加密您的日记，请牢记。丢失密码将无法恢复数据。';
+                        this.els.lockBtn.innerText = '设置并进入';
+                        this.els.lockInput.placeholder = '设置主密码 (至少4位)';
+                    } else {
+                        this.els.lockTitle.innerText = '解锁日记';
+                        this.els.lockDesc.innerText = '请输入主密码以查看您的笔记';
+                        this.els.lockBtn.innerText = '解锁';
+                    }
+                });
+
+                this.els.lockBtn.addEventListener('click', async () => {
+                    const password = this.els.lockInput.value;
+                    if (!password || password.length < 4) {
+                        this.els.lockError.textContent = '密码至少4位';
+                        this.els.lockError.style.display = 'block';
+                        return;
+                    }
+
+                    const saltStr = await this.db.getSetting('salt');
+                    if (!saltStr) {
+                        const salt = crypto.getRandomValues(new Uint8Array(16));
+                        await this.crypto.deriveKey(password, salt);
+                        await this.db.setSetting('salt', btoa(String.fromCharCode(...salt)));
+                        const authCheck = await this.crypto.encrypt("AUTH_CHECK_SUCCESS");
+                        await this.db.setSetting('authCheck', authCheck);
+                        await this.initDefaultData();
+                        this.enterApp();
+                    } else {
+                        const salt = Uint8Array.from(atob(saltStr), c => c.charCodeAt(0));
+                        await this.crypto.deriveKey(password, salt);
+                        const authCheck = await this.db.getSetting('authCheck');
+                        let valid = true;
+                        if (authCheck) {
+                            const decrypted = await this.crypto.decrypt(authCheck);
+                            if (decrypted !== "AUTH_CHECK_SUCCESS") valid = false;
+                        } else {
+                            const notes = await this.db.getAllNotes();
+                            if (notes.length > 0 && notes[0].encryptedContent) {
+                                const test = await this.crypto.decrypt(notes[0].encryptedContent);
+                                if (test === null) valid = false;
+                            }
+                            if (valid) {
+                                const newAuthCheck = await this.crypto.encrypt("AUTH_CHECK_SUCCESS");
+                                await this.db.setSetting('authCheck', newAuthCheck);
+                            }
+                        }
+                        if (!valid) {
+                            this.els.lockError.textContent = '密码错误，请重试';
+                            this.els.lockError.style.display = 'block';
+                            this.crypto.key = null;
+                            return;
+                        }
+                        this.enterApp();
+                    }
+                });
+
+                this.els.lockInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') this.els.lockBtn.click();
+                });
+            }
+
+            async checkFirstTime() {
+                const salt = await this.db.getSetting('salt');
+                return !salt;
+            }
+
+            async initDefaultData() {
+                const cats = [
+                    { id: 'daily', name: '小可爱', color: '#5D5CDE', order: 0 },
+                    { id: 'work', name: '阅读', color: '#FF9500', order: 1 },
+                    { id: 'ideas', name: '随记', color: '#34C759', order: 2 },
+                    { id: 'memories', name: '计划', color: '#FF69B4', order: 3 },
+                    { id: 'other', name: '工作', color: '#9E9E9E', order: 4 }
+                ];
+                for (let cat of cats) await this.db.saveCategory(cat);
+            }
+
+            enterApp() {
+                this.els.lockScreen.classList.add('hide');
+                this.bindEditorEvents();
+                this.renderCategories();
+                this.renderNotes();
+                this.loadSettingsToUI();
                 this.initTheme();
             }
 
             setupViewport() {
                 if (window.visualViewport) {
-                    const onResize = () => { const vh = window.visualViewport.height; document.documentElement.style.setProperty('--vh', `${vh}px`); if (this.els.editorContainer.classList.contains('active')) { this.els.editorContainer.style.height = `${vh}px`; } };
-                    window.visualViewport.addEventListener('resize', onResize); onResize();
+                    const onResize = () => {
+                        const vh = window.visualViewport.height;
+                        document.documentElement.style.setProperty('--vh', `${vh}px`);
+                        if (this.els.editorContainer.classList.contains('active')) {
+                            this.els.editorContainer.style.height = `${vh}px`;
+                        }
+                    };
+                    window.visualViewport.addEventListener('resize', onResize);
+                    onResize();
                 }
+
                 let startX = 0, currentX = 0, isDragging = false;
                 const ec = this.els.editorContainer;
-                ec.addEventListener('touchstart', e => { if (e.touches[0].clientX < 30) { isDragging = true; startX = e.touches[0].clientX; ec.classList.add('swiping'); } }, { passive: true });
-                ec.addEventListener('touchmove', e => { if (!isDragging) return; currentX = e.touches[0].clientX; const diff = currentX - startX; if (diff > 0) ec.style.transform = `translateX(${diff}px)`; }, { passive: true });
-                ec.addEventListener('touchend', () => { if (!isDragging) return; const diff = currentX - startX; ec.classList.remove('swiping'); if (diff > 100) { this.closeEditor(true); } else { ec.style.transform = ''; } isDragging = false; });
+                ec.addEventListener('touchstart', e => {
+                    if (e.touches[0].clientX < 30) { isDragging = true; startX = e.touches[0].clientX; ec.classList.add('swiping'); }
+                }, { passive: true });
+                ec.addEventListener('touchmove', e => {
+                    if (!isDragging) return;
+                    currentX = e.touches[0].clientX;
+                    const diff = currentX - startX;
+                    if (diff > 0) ec.style.transform = `translateX(${diff}px)`;
+                }, { passive: true });
+                ec.addEventListener('touchend', () => {
+                    if (!isDragging) return;
+                    const diff = currentX - startX;
+                    ec.classList.remove('swiping');
+                    if (diff > 100) { this.closeEditor(true); }
+                    else { ec.style.transform = ''; }
+                    isDragging = false;
+                });
             }
 
             async renderCategories() {
                 const cats = await this.db.getAllCategories();
                 this.els.categories.innerHTML = `<button class="category-btn active" data-id="all">全部</button>`;
-                cats.forEach(c => { const btn = document.createElement('button'); btn.className = 'category-btn'; btn.dataset.id = c.id; btn.innerText = c.name; btn.style.borderColor = c.color; btn.style.color = c.color; this.els.categories.appendChild(btn); });
+                cats.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = 'category-btn'; 
+                    btn.dataset.id = c.id; 
+                    btn.innerText = c.name;
+                    btn.style.borderColor = c.color;
+                    btn.style.color = c.color;
+                    this.els.categories.appendChild(btn);
+                });
                 this.els.categorySelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                if (this.els.categoryManageModal.classList.contains('active')) { this.renderCategoryList(); }
+                
+                if (this.els.categoryManageModal.classList.contains('active')) {
+                    this.renderCategoryList();
+                }
             }
 
             async renderCategoryList() {
@@ -678,11 +1031,11 @@
                 this.els.categoryList.innerHTML = '';
                 cats.forEach((c, index) => {
                     const div = document.createElement('div');
-                    div.style.cssText = 'display:flex;align-items:center;gap:4px;padding:8px 0;border-bottom:1px solid var(--border-color)';
+                    div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.gap = '4px'; div.style.padding = '8px 0'; div.style.borderBottom = '1px solid var(--border-color)';
                     div.innerHTML = `
-                        <div style="display:flex;flex-direction:column;margin-right:4px;">
-                            <button class="icon-btn up-btn" data-id="${c.id}" style="height:20px;font-size:12px;" ${index === 0 ? 'disabled' : ''}><i class="fas fa-caret-up"></i></button>
-                            <button class="icon-btn down-btn" data-id="${c.id}" style="height:20px;font-size:12px;" ${index === cats.length - 1 ? 'disabled' : ''}><i class="fas fa-caret-down"></i></button>
+                        <div style="display:flex; flex-direction:column; margin-right:4px;">
+                            <button class="icon-btn up-btn" data-id="${c.id}" style="height:20px; font-size:12px;" ${index === 0 ? 'disabled' : ''}><i class="fas fa-caret-up"></i></button>
+                            <button class="icon-btn down-btn" data-id="${c.id}" style="height:20px; font-size:12px;" ${index === cats.length - 1 ? 'disabled' : ''}><i class="fas fa-caret-down"></i></button>
                         </div>
                         <input type="color" class="cat-color-input" value="${c.color}" data-id="${c.id}" style="width:28px;height:28px;border:none;cursor:pointer;background:transparent;">
                         <input type="text" class="cat-name-input" value="${c.name}" data-id="${c.id}" style="flex:1;padding:4px;border:1px solid transparent;background:transparent;color:var(--text-primary);">
@@ -694,96 +1047,170 @@
             }
 
             bindCategoryListEvents() {
-                this.els.categoryList.querySelectorAll('.up-btn').forEach(btn => { btn.addEventListener('click', async () => { if (!btn.disabled) await this.swapCategoryOrder(btn.dataset.id, -1); }); });
-                this.els.categoryList.querySelectorAll('.down-btn').forEach(btn => { btn.addEventListener('click', async () => { if (!btn.disabled) await this.swapCategoryOrder(btn.dataset.id, 1); }); });
-                this.els.categoryList.querySelectorAll('.cat-color-input').forEach(input => { input.addEventListener('change', async (e) => { const id = e.target.dataset.id; const cats = await this.db.getAllCategories(); const cat = cats.find(c => c.id === id); if (cat) { cat.color = e.target.value; await this.db.saveCategory(cat); this.renderCategories(); } }); });
-                this.els.categoryList.querySelectorAll('.cat-name-input').forEach(input => { input.addEventListener('blur', async (e) => { const id = e.target.dataset.id; const name = e.target.value.trim(); if (!name) { this.renderCategoryList(); return; } const cats = await this.db.getAllCategories(); const cat = cats.find(c => c.id === id); if (cat && cat.name !== name) { cat.name = name; await this.db.saveCategory(cat); this.renderCategories(); } }); });
-                this.els.categoryList.querySelectorAll('.delete-category').forEach(btn => { btn.addEventListener('click', () => this.deleteCategory(btn.dataset.id)); });
+                this.els.categoryList.querySelectorAll('.up-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (btn.disabled) return;
+                        await this.swapCategoryOrder(btn.dataset.id, -1);
+                    });
+                });
+                this.els.categoryList.querySelectorAll('.down-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (btn.disabled) return;
+                        await this.swapCategoryOrder(btn.dataset.id, 1);
+                    });
+                });
+                this.els.categoryList.querySelectorAll('.cat-color-input').forEach(input => {
+                    input.addEventListener('change', async (e) => {
+                        const id = e.target.dataset.id; 
+                        const color = e.target.value;
+                        const cats = await this.db.getAllCategories();
+                        const cat = cats.find(c => c.id === id);
+                        if (cat) { 
+                            cat.color = color; 
+                            await this.db.saveCategory(cat); 
+                            this.renderCategories();
+                        }
+                    });
+                });
+                this.els.categoryList.querySelectorAll('.cat-name-input').forEach(input => {
+                    input.addEventListener('blur', async (e) => {
+                        const id = e.target.dataset.id; 
+                        const name = e.target.value.trim();
+                        if (!name) {
+                            alert('分类名称不能为空');
+                            this.renderCategoryList();
+                            return;
+                        }
+                        const cats = await this.db.getAllCategories();
+                        const cat = cats.find(c => c.id === id);
+                        if (cat && cat.name !== name) { 
+                            cat.name = name; 
+                            await this.db.saveCategory(cat); 
+                            this.renderCategories();
+                        }
+                    });
+                });
+                this.els.categoryList.querySelectorAll('.delete-category').forEach(btn => {
+                    btn.addEventListener('click', () => this.deleteCategory(btn.dataset.id));
+                });
             }
 
             async swapCategoryOrder(id, direction) {
                 const cats = await this.db.getAllCategories();
                 const index = cats.findIndex(c => c.id === id);
                 if (index === -1) return;
+                
                 const targetIndex = index + direction;
                 if (targetIndex < 0 || targetIndex >= cats.length) return;
-                const currentCat = cats[index]; const targetCat = cats[targetIndex];
-                const tempOrder = currentCat.order; currentCat.order = targetCat.order; targetCat.order = tempOrder;
-                await this.db.saveCategory(currentCat); await this.db.saveCategory(targetCat);
+                
+                const currentCat = cats[index];
+                const targetCat = cats[targetIndex];
+                
+                const tempOrder = currentCat.order;
+                currentCat.order = targetCat.order;
+                targetCat.order = tempOrder;
+                
+                await this.db.saveCategory(currentCat);
+                await this.db.saveCategory(targetCat);
+                
                 this.renderCategories();
             }
 
             async deleteCategory(id) {
                 if (!confirm('删除分类会将相关笔记归类到"其他"，确定删除吗？')) return;
                 const notes = await this.db.getAllNotes();
-                for (let note of notes) { if (note.category === id) { note.category = 'other'; await this.db.saveNote(note); } }
+                for (let note of notes) {
+                    if (note.category === id) { note.category = 'other'; await this.db.saveNote(note); }
+                }
                 await this.db.deleteCategory(id);
-                this.renderCategories(); this.renderNotes();
+                this.renderCategories();
+                this.renderNotes();
             }
 
-            async renderNotes(retryCount = 0) {
-                try {
-                    let notes = await this.db.getAllNotes();
-                    if (!notes) notes = [];
-                    if (this.currentFilter !== 'all') {
-                        notes = notes.filter(n => n.category === this.currentFilter);
-                    }
-                    const search = this.els.searchInput.value.trim().toLowerCase();
-                    if (search) {
-                        notes = notes.filter(n => {
-                            const titleText = (n.title || '').toLowerCase();
-                            const contentText = (this.extractText(n.content) || '').toLowerCase();
-                            return titleText.includes(search) || contentText.includes(search);
-                        });
-                    }
-                    this.els.clearSearch.style.display = this.els.searchInput.value.trim() ? 'block' : 'none';
-                    this.els.notesList.innerHTML = '';
-                    if (notes.length === 0) {
-                        this.els.notesList.innerHTML = `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
-                        return;
-                    }
-                    const categories = await this.db.getAllCategories();
-                    const categoryMap = {};
-                    categories.forEach(c => { categoryMap[c.id] = c.name; });
-                    notes.forEach(n => {
-                        const div = document.createElement('div');
-                        div.className = 'note-item';
-                        const preview = this.extractText(n.content).substring(0, 100) || '（无内容）';
-                        const categoryName = categoryMap[n.category] || '未分类';
-                        div.innerHTML = `
-                            <div class="note-title">${this.escapeHtml(n.title || '未命名')}</div>
-                            <div class="note-content-preview">${this.escapeHtml(preview)}</div>
-                            <div class="note-footer">
-                                <span class="note-time">${this.formatDate(n.updatedAt)}</span>
-                                <span class="note-category">${this.escapeHtml(categoryName)}</span>
-                            </div>
-                        `;
-                        div.addEventListener('click', () => this.openEditor(n.id));
-                        this.els.notesList.appendChild(div);
+            async renderNotes() {
+                let notes = await this.db.getAllNotes();
+                if (this.currentFilter !== 'all') notes = notes.filter(n => n.category === this.currentFilter);
+                const search = this.els.searchInput.value.trim().toLowerCase();
+                if (search) {
+                    notes = notes.filter(n => {
+                        const text = (n.title || '').toLowerCase() + ' ' + (extractText(n.content) || '').toLowerCase();
+                        return text.includes(search);
                     });
-                } catch (err) {
-                    console.error('渲染笔记失败:', err);
-                    if (retryCount < 2) {
-                        console.log(`重试渲染笔记 (${retryCount + 1}/2)`);
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                        return this.renderNotes(retryCount + 1);
-                    }
-                    this.els.notesList.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>加载笔记失败，请检查网络或刷新</p></div>`;
                 }
+                this.els.clearSearch.style.display = this.els.searchInput.value.trim() ? 'block' : 'none';
+
+                this.els.notesList.innerHTML = '';
+                if (notes.length === 0) {
+                    this.els.notesList.innerHTML = `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
+                    return;
+                }
+
+                const categories = await this.db.getAllCategories();
+                const categoryMap = {};
+                categories.forEach(c => { categoryMap[c.id] = c.name; });
+
+                notes.forEach(n => {
+                    const div = document.createElement('div');
+                    div.className = 'note-item';
+                    const preview = extractText(n.content).substring(0, 100);
+                    const categoryName = categoryMap[n.category] || '未分类';
+                    div.innerHTML = `
+                        <div class="note-title">${escapeHtml(n.title || '未命名')}</div>
+                        <div class="note-content-preview">${escapeHtml(preview)}</div>
+                        <div class="note-footer">
+                            <span class="note-time">${formatDate(n.updatedAt)}</span>
+                            <span class="note-category">${escapeHtml(categoryName)}</span>
+                        </div>
+                    `;
+                    div.addEventListener('click', () => this.openEditor(n.id));
+                    this.els.notesList.appendChild(div);
+                });
             }
 
             bindEditorEvents() {
-                this.els.toolbar.querySelectorAll('[data-action]').forEach(btn => { btn.addEventListener('mousedown', e => e.preventDefault()); btn.addEventListener('click', () => { if (this.editor) this.executeAction(btn.dataset.action); }); });
-                this.els.textColorPicker.addEventListener('input', e => { if (this.editor) this.editor.chain().focus().setColor(e.target.value).run(); });
-                this.els.textBgColorPicker.addEventListener('input', e => { if (this.editor) this.editor.chain().focus().setHighlight({ color: e.target.value }).run(); });
-                this.els.fontSizeSelect.addEventListener('change', e => { if (this.editor) this.editor.chain().focus().setMark('fontSize', { fontSize: e.target.value + 'px' }).run(); });
-                this.els.timestampBtn.addEventListener('click', () => { const visible = this.els.timestampToolbar.style.display === 'flex'; this.els.timestampToolbar.style.display = visible ? 'none' : 'flex'; });
-                this.els.timestampToolbar.addEventListener('click', (e) => { const btn = e.target.closest('.timestamp-btn'); if (btn) this.handleTimestampInsert(btn.dataset.format); });
-                this.els.editorImageBtn.addEventListener('click', () => this.insertImage());
+                this.els.toolbar.querySelectorAll('[data-action]').forEach(btn => {
+                    btn.addEventListener('mousedown', e => e.preventDefault());
+                    btn.addEventListener('click', () => {
+                        if (!this.editor) return;
+                        this.executeAction(btn.dataset.action);
+                    });
+                });
+
+                this.els.textColorPicker.addEventListener('input', e => {
+                    if (!this.editor) return;
+                    this.editor.chain().focus().setColor(e.target.value).run();
+                });
+                this.els.textBgColorPicker.addEventListener('input', e => {
+                    if (!this.editor) return;
+                    this.editor.chain().focus().setHighlight({ color: e.target.value }).run();
+                });
+                this.els.fontSizeSelect.addEventListener('change', e => {
+                    if (!this.editor) return;
+                    this.editor.chain().focus().setMark('fontSize', { fontSize: e.target.value + 'px' }).run();
+                });
+
+                this.els.timestampBtn.addEventListener('click', () => {
+                    const visible = this.els.timestampToolbar.style.display === 'flex';
+                    this.els.timestampToolbar.style.display = visible ? 'none' : 'flex';
+                });
+                this.els.timestampToolbar.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.timestamp-btn');
+                    if (btn) this.handleTimestampInsert(btn.dataset.format);
+                });
+
+                // 图片插入已通过工具栏按钮处理，无需单独绑定
+
                 this.els.toggleToolbarBtn.addEventListener('click', () => {
                     const isHidden = this.els.toolbar.style.display === 'none' || getComputedStyle(this.els.toolbar).display === 'none';
-                    if (isHidden) { this.els.toolbar.style.display = 'flex'; this.els.toggleToolbarText.innerText = '隐藏格式工具栏'; this.els.toggleToolbarBtn.querySelector('i').className = 'fas fa-chevron-up'; }
-                    else { this.els.toolbar.style.display = 'none'; this.els.toggleToolbarText.innerText = '显示格式工具栏'; this.els.toggleToolbarBtn.querySelector('i').className = 'fas fa-pen-fancy'; }
+                    if (isHidden) {
+                        this.els.toolbar.style.display = 'flex';
+                        this.els.toggleToolbarText.innerText = '隐藏格式工具栏';
+                        this.els.toggleToolbarBtn.querySelector('i').className = 'fas fa-chevron-up';
+                    } else {
+                        this.els.toolbar.style.display = 'none';
+                        this.els.toggleToolbarText.innerText = '显示格式工具栏';
+                        this.els.toggleToolbarBtn.querySelector('i').className = 'fas fa-pen-fancy';
+                    }
                 });
             }
 
@@ -792,19 +1219,65 @@
                 const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
                 this.els.editorContainer.style.height = `${vh}px`;
                 this.els.editorContainer.classList.add('active');
-                const scrollY = window.scrollY; document.body.style.cssText = `position:fixed;top:-${scrollY}px;left:0;right:0;width:100%`;
-                let content = { type: 'doc', content: [{ type: 'paragraph' }] }, title = '', category = 'daily';
-                if (id) { const note = await this.db.getNote(id); if (note) { title = note.title || ''; content = note.content || content; category = note.category || category; } }
-                this.els.noteTitleInput.value = title; this.els.categorySelect.value = category;
+                
+                // 修复：彻底锁定背景滚动，防止移动端滚动穿透
+                const scrollY = window.scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollY}px`;
+                document.body.style.left = '0';
+                document.body.style.right = '0';
+                document.body.style.width = '100%';
+
+                let content = { type: 'doc', content: [{ type: 'paragraph' }] };
+                let title = ''; let category = 'daily';
+
+                if (id) {
+                    const note = await this.db.getNote(id);
+                    if (note) {
+                        title = note.title || '';
+                        content = note.content || content;
+                        category = note.category || category;
+                    }
+                }
+
+                this.els.noteTitleInput.value = title;
+                this.els.categorySelect.value = category;
+
                 if (!this.editor) {
                     this.editor = new Editor({
                         element: document.getElementById('tiptap-editor'),
-                        extensions: [ StarterKit.configure({ heading: { levels: [1, 2, 3] } }), Underline, TextStyle, Color.configure({ types: ['textStyle'] }), Highlight.configure({ multicolor: true }), TextAlign.configure({ types: ['heading', 'paragraph'] }), ImageExtension.configure({ allowBase64: true }), FontSize, Indent, Placeholder.configure({ placeholder: '开始记录...' }) ],
+                        extensions: [
+                            StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+                            Underline, TextStyle,
+                            Color.configure({ types: ['textStyle'] }),
+                            Highlight.configure({ multicolor: true }),
+                            TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right'] }),
+                            ImageExtension.configure({ allowBase64: true }),
+                            FontSize, Indent,
+                            Placeholder.configure({ placeholder: '开始记录...' })
+                        ],
                         content: content,
-                        editorProps: { attributes: { class: 'ProseMirror' }, handlePaste: (view, event) => { const items = event.clipboardData?.items; if (items) { for (let item of items) { if (item.type.startsWith('image/')) { const file = item.getAsFile(); if (file) { this.handleImageFile(file); event.preventDefault(); return true; } } } } return false; } },
-                        onUpdate: () => { this.triggerAutoSave(); this.updateToolbarState(); }, onSelectionUpdate: () => { this.updateToolbarState(); }
+                        editorProps: {
+                            attributes: { class: 'ProseMirror' },
+                            handlePaste: (view, event) => {
+                                const items = event.clipboardData?.items;
+                                if (items) {
+                                    for (let item of items) {
+                                        if (item.type.startsWith('image/')) {
+                                            const file = item.getAsFile();
+                                            if (file) { this.handleImageFile(file); event.preventDefault(); return true; }
+                                        }
+                                    }
+                                }
+                                return false;
+                            }
+                        },
+                        onUpdate: () => { this.triggerAutoSave(); this.updateToolbarState(); },
+                        onSelectionUpdate: () => { this.updateToolbarState(); }
                     });
-                } else { this.editor.commands.setContent(content); }
+                } else {
+                    this.editor.commands.setContent(content);
+                }
                 this.lastSavedContent = JSON.stringify(this.editor.getJSON());
                 this.updateToolbarState();
                 setTimeout(() => this.editor.commands.focus(), 300);
@@ -814,117 +1287,482 @@
                 if (shouldSave) this.saveNote(true);
                 this.els.editorContainer.style.transform = '';
                 this.els.editorContainer.classList.remove('active');
-                this.editingId = null; this.els.timestampToolbar.style.display = 'none';
+                this.editingId = null;
+                this.els.timestampToolbar.style.display = 'none';
+                
+                // 修复：恢复背景滚动
                 const scrollY = parseInt(document.body.style.top || '0') * -1;
-                document.body.style.cssText = ''; window.scrollTo(0, scrollY);
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
+                document.body.style.width = '';
+                window.scrollTo(0, scrollY);
             }
 
             async saveNote(force = false) {
                 if (!this.editor) return;
                 const currentContent = JSON.stringify(this.editor.getJSON());
                 if (!force && currentContent === this.lastSavedContent) return;
-                const noteData = { id: this.editingId || Date.now().toString(), title: this.els.noteTitleInput.value.trim() || '未命名笔记', content: this.editor.getJSON(), category: this.els.categorySelect.value, updatedAt: new Date().toISOString() };
+
+                const noteData = {
+                    id: this.editingId || Date.now().toString(),
+                    title: this.els.noteTitleInput.value.trim() || '未命名笔记',
+                    content: this.editor.getJSON(),
+                    category: this.els.categorySelect.value,
+                    updatedAt: new Date().toISOString()
+                };
+
                 try {
-                    await this.db.saveNote(noteData); this.lastSavedContent = currentContent;
+                    await this.db.saveNote(noteData);
+                    this.lastSavedContent = currentContent;
                     if (!this.editingId) this.editingId = noteData.id;
-                    this.els.autoSaveStatus.textContent = '已保存'; this.els.autoSaveStatus.classList.add('show');
+                    this.els.autoSaveStatus.textContent = '已保存';
+                    this.els.autoSaveStatus.classList.add('show');
                     setTimeout(() => this.els.autoSaveStatus.classList.remove('show'), 1500);
-                    await this.renderNotes();
-                } catch (e) { this.els.autoSaveStatus.textContent = '保存失败'; this.els.autoSaveStatus.classList.add('show'); }
+                    this.renderNotes();
+                } catch (e) {
+                    this.els.autoSaveStatus.textContent = '保存失败';
+                    this.els.autoSaveStatus.classList.add('show');
+                    console.error("保存笔记失败:", e);
+                }
             }
 
-            async deleteNote() { if (!this.editingId) { this.closeEditor(false); return; } if (confirm('确定删除此笔记？')) { await this.db.deleteNote(this.editingId); await this.renderNotes(); this.closeEditor(false); } }
-            executeAction(action) { if (!this.editor) return; const chain = this.editor.chain().focus(); const map = { toggleBold: () => chain.toggleBold().run(), toggleItalic: () => chain.toggleItalic().run(), toggleUnderline: () => chain.toggleUnderline().run(), toggleStrike: () => chain.toggleStrike().run(), toggleCode: () => chain.toggleCode().run(), unsetAllMarks: () => chain.unsetAllMarks().run(), 'setHeading-1': () => chain.setHeading({ level: 1 }).run(), 'setHeading-2': () => chain.setHeading({ level: 2 }).run(), 'setHeading-3': () => chain.setHeading({ level: 3 }).run(), setParagraph: () => chain.setParagraph().run(), toggleBulletList: () => chain.toggleBulletList().run(), toggleOrderedList: () => chain.toggleOrderedList().run(), toggleBlockquote: () => chain.toggleBlockquote().run(), toggleCodeBlock: () => chain.toggleCodeBlock().run(), 'setTextAlign-left': () => chain.setTextAlign('left').run(), 'setTextAlign-center': () => chain.setTextAlign('center').run(), 'setTextAlign-right': () => chain.setTextAlign('right').run(), indent: () => chain.indent().run(), outdent: () => chain.outdent().run() }; if (map[action]) map[action](); this.updateToolbarState(); this.triggerAutoSave(); }
-            updateToolbarState() { if (!this.editor) return; const editor = this.editor; this.els.toolbar.querySelectorAll('[data-action]').forEach(btn => { const action = btn.dataset.action; let active = false; if (action === 'toggleBold') active = editor.isActive('bold'); else if (action === 'toggleItalic') active = editor.isActive('italic'); else if (action === 'toggleUnderline') active = editor.isActive('underline'); else if (action === 'toggleStrike') active = editor.isActive('strike'); else if (action === 'toggleCode') active = editor.isActive('code'); else if (action.startsWith('setHeading-')) { active = editor.isActive('heading', { level: parseInt(action.split('-')[1]) }); } else if (action === 'setParagraph') active = editor.isActive('paragraph'); else if (action === 'toggleBulletList') active = editor.isActive('bulletList'); else if (action === 'toggleOrderedList') active = editor.isActive('orderedList'); else if (action === 'toggleBlockquote') active = editor.isActive('blockquote'); else if (action === 'toggleCodeBlock') active = editor.isActive('codeBlock'); else if (action.startsWith('setTextAlign-')) { active = editor.isActive({ textAlign: action.split('-')[1] }); } btn.classList.toggle('is-active', active); }); }
-            triggerAutoSave() { clearTimeout(this.autoSaveTimer); this.els.autoSaveStatus.textContent = '编辑中...'; this.els.autoSaveStatus.classList.add('show'); this.autoSaveTimer = setTimeout(() => this.saveNote(), this.settings.autoSaveInterval); }
-            handleTimestampInsert(format) { if (format === 'custom') { this.els.customTimestampModal.classList.add('active'); this.updateFormatPreview(); } else { this.insertTimestamp(format); } }
-            insertTimestamp(format) { const ts = this.formatTimestamp(new Date(), this.getTimestampFormat(format)); if (this.editor) { this.editor.chain().focus().insertContent(ts).run(); this.triggerAutoSave(); } this.els.timestampToolbar.style.display = 'none'; }
-            getTimestampFormat(format) { const map = { datetime: 'YYYY年MM月DD日 HH:mm:ss', date: 'YYYY年MM月DD日', time: 'HH:mm:ss', week: 'YYYY年MM月DD日 ddd', custom: this.els.customFormatInput.value }; return map[format] || map.datetime; }
-            updateFormatPreview() { const fmt = this.els.customFormatInput.value; if (fmt.trim()) this.els.formatPreview.textContent = this.formatTimestamp(new Date(), fmt); }
-            formatTimestamp(date, format) { const d = new Date(date); const pad = n => n.toString().padStart(2, '0'); const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']; const repl = { 'YYYY': d.getFullYear(), 'MM': pad(d.getMonth() + 1), 'DD': pad(d.getDate()), 'HH': pad(d.getHours()), 'mm': pad(d.getMinutes()), 'ss': pad(d.getSeconds()), 'ddd': weekdays[d.getDay()] }; let res = format; for (const [k, v] of Object.entries(repl)) res = res.replace(new RegExp(k, 'g'), v); return res; }
-            insertImage() { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.onchange = async (e) => { const file = e.target.files[0]; if (file) { try { const compressed = await compressImage(file); await this.handleImageFile(compressed); } catch (err) {} } input.remove(); }; input.click(); }
-            handleImageFile(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (ev) => { const dataUrl = ev.target.result; if (this.editor) { try { this.editor.chain().focus().setImage({ src: dataUrl }).run(); this.triggerAutoSave(); resolve(); } catch (err) { reject(err); } } else reject(new Error('Editor not init')); }; reader.onerror = () => reject(new Error('Read failed')); reader.readAsDataURL(file); }); }
-            downloadBlob(blob, filename) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
-            async exportNotes(format) { let notes = await this.db.getAllNotes(); const cleanNotes = notes.map(n => { const { encryptedContent, ...rest } = n; return rest; }); const categories = await this.db.getAllCategories(); if (format === 'json') { const data = { app: '素记日记', version: '3.1', exportDate: new Date().toISOString(), noteCount: cleanNotes.length, categories, notes: cleanNotes }; this.downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `素记日记_${new Date().toISOString().slice(0,10)}.json`); } else { let md = `# 素记日记 - 笔记导出\n\n- **导出时间**: ${this.formatTimestamp(new Date(), 'YYYY年MM月DD日 HH:mm:ss')}\n- **笔记总数**: ${cleanNotes.length}\n\n---\n\n`; cleanNotes.forEach((n, i) => { const cat = categories.find(c => c.id === n.category); md += `## 笔记 ${i+1}: ${n.title}\n\n- **分类**: ${cat ? cat.name : n.category}\n- **更新**: ${this.formatTimestamp(new Date(n.updatedAt), 'YYYY年MM月DD日 HH:mm:ss')}\n\n---\n\n${this.extractText(n.content)}\n\n---\n\n`; }); this.downloadBlob(new Blob([md], { type: 'text/markdown' }), `素记日记_${new Date().toISOString().slice(0,10)}.md`); } }
+            async deleteNote() {
+                if (!this.editingId) { this.closeEditor(false); return; }
+                if (confirm('确定删除此笔记？')) {
+                    await this.db.deleteNote(this.editingId);
+                    this.renderNotes();
+                    this.closeEditor(false);
+                }
+            }
 
-            bindGlobalEvents() {
-                this.els.addButton.addEventListener('click', () => this.openEditor());
-                this.els.closeEditor.addEventListener('click', () => this.closeEditor(true));
-                this.els.saveNote.addEventListener('click', () => this.saveNote(true));
-                this.els.deleteNote.addEventListener('click', () => this.deleteNote());
-                this.els.searchBtn.addEventListener('click', () => { const display = this.els.searchContainer.style.display; this.els.searchContainer.style.display = display === 'none' ? 'block' : 'none'; if (display === 'none') this.els.searchInput.focus(); });
-                this.els.searchInput.addEventListener('input', () => this.renderNotes());
-                this.els.clearSearch.addEventListener('click', () => { this.els.searchInput.value = ''; this.renderNotes(); });
-                this.els.categoryManageBtn.addEventListener('click', async () => { await this.renderCategoryList(); this.els.categoryManageModal.classList.add('active'); });
-                this.els.closeCategoryManageModal.addEventListener('click', () => this.els.categoryManageModal.classList.remove('active'));
-                this.els.addNewCategoryBtn.addEventListener('click', async () => { const name = this.els.newCategoryName.value.trim(); const color = this.els.newCategoryColor.value; if (!name) return; const cats = await this.db.getAllCategories(); const newOrder = cats.length > 0 ? Math.max(...cats.map(c => c.order || 0)) + 1 : 0; await this.db.saveCategory({ id: 'cat_' + Date.now(), name, color, order: newOrder }); this.els.newCategoryName.value = ''; this.renderCategoryList(); this.renderCategories(); });
-                this.els.exportBtn.addEventListener('click', () => { const display = this.els.exportSection.style.display; this.els.exportSection.style.display = display === 'none' ? 'block' : 'none'; });
-                this.els.exportJsonBtn.addEventListener('click', () => this.exportNotes('json'));
-                this.els.exportMarkdownBtn.addEventListener('click', () => this.exportNotes('markdown'));
-                this.els.importJsonBtn.addEventListener('click', () => this.els.importModal.classList.add('active'));
-                this.els.closeImportModal.addEventListener('click', () => this.els.importModal.classList.remove('active'));
-                this.els.importJsonBtn2.addEventListener('click', () => { this.els.importModal.classList.remove('active'); const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = (e) => { if (e.target.files[0]) this.importJSON(e.target.files[0]); }; input.click(); });
-                this.els.importTxtBtn.addEventListener('click', () => { this.els.importModal.classList.remove('active'); const input = document.createElement('input'); input.type = 'file'; input.accept = '.md,.txt'; input.onchange = (e) => { if (e.target.files[0]) this.importMarkdown(e.target.files[0]); }; input.click(); });
-                this.els.backupBtn.addEventListener('click', async () => { let notes = await this.db.getAllNotes(); const cleanNotes = notes.map(({ encryptedContent, ...rest }) => rest); const cats = await this.db.getAllCategories(); this.downloadBlob(new Blob([JSON.stringify({ timestamp: new Date().toISOString(), notes: cleanNotes, categories: cats }, null, 2)], { type: 'application/json' }), `素记备份_${new Date().toISOString().slice(0,10)}.json`); });
-                this.els.clearDataBtn.addEventListener('click', () => this.els.clearDataModal.classList.add('active'));
-                this.els.closeClearDataModal.addEventListener('click', () => this.els.clearDataModal.classList.remove('active'));
-                this.els.cancelClearData.addEventListener('click', () => this.els.clearDataModal.classList.remove('active'));
-                this.els.confirmClearData.addEventListener('click', async () => { await this.db.clearAll(); this.els.clearDataModal.classList.remove('active'); await this.renderNotes(); await this.renderCategories(); });
-                this.els.categories.addEventListener('click', e => { if (e.target.classList.contains('category-btn')) { document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); this.currentFilter = e.target.dataset.id; this.renderNotes(); } });
-                this.els.themeBtn.addEventListener('click', () => this.toggleTheme());
-                document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.els.editorContainer.classList.contains('active')) { this.closeEditor(true); } if ((e.ctrlKey || e.metaKey) && e.key === 's' && this.els.editorContainer.classList.contains('active')) { e.preventDefault(); this.saveNote(true); } });
-                this.els.closeCustomTimestampModal.addEventListener('click', () => this.els.customTimestampModal.classList.remove('active'));
-                this.els.cancelCustomTimestamp.addEventListener('click', () => this.els.customTimestampModal.classList.remove('active'));
-                this.els.insertCustomTimestamp.addEventListener('click', () => { this.insertTimestamp('custom'); this.els.customTimestampModal.classList.remove('active'); });
-                this.els.customFormatInput.addEventListener('input', () => this.updateFormatPreview());
-                document.querySelectorAll('[data-preset]').forEach(btn => { btn.addEventListener('click', () => { this.els.customFormatInput.value = btn.dataset.preset; this.updateFormatPreview(); }); });
+            executeAction(action) {
+                if (!this.editor) return;
+                const chain = this.editor.chain().focus();
+                switch (action) {
+                    case 'toggleBold': chain.toggleBold().run(); break;
+                    case 'toggleItalic': chain.toggleItalic().run(); break;
+                    case 'toggleUnderline': chain.toggleUnderline().run(); break;
+                    case 'toggleStrike': chain.toggleStrike().run(); break;
+                    case 'toggleCode': chain.toggleCode().run(); break;
+                    case 'unsetAllMarks': chain.unsetAllMarks().run(); break;
+                    case 'setHeading-1': chain.setHeading({ level: 1 }).run(); break;
+                    case 'setHeading-2': chain.setHeading({ level: 2 }).run(); break;
+                    case 'setHeading-3': chain.setHeading({ level: 3 }).run(); break;
+                    case 'setParagraph': chain.setParagraph().run(); break;
+                    case 'toggleBulletList': chain.toggleBulletList().run(); break;
+                    case 'toggleOrderedList': chain.toggleOrderedList().run(); break;
+                    case 'toggleBlockquote': chain.toggleBlockquote().run(); break;
+                    case 'toggleCodeBlock': chain.toggleCodeBlock().run(); break;
+                    case 'setTextAlign-left': chain.setTextAlign('left').run(); break;
+                    case 'setTextAlign-center': chain.setTextAlign('center').run(); break;
+                    case 'setTextAlign-right': chain.setTextAlign('right').run(); break;
+                    case 'indent': chain.indent().run(); break;
+                    case 'outdent': chain.outdent().run(); break;
+                    case 'insertImage': 
+                        this.insertImage(); 
+                        break;
+                }
+                this.updateToolbarState();
+                this.triggerAutoSave();
+            }
+
+            updateToolbarState() {
+                if (!this.editor) return;
+                const editor = this.editor;
+                this.els.toolbar.querySelectorAll('[data-action]').forEach(btn => {
+                    const action = btn.dataset.action;
+                    let active = false;
+                    if (action === 'toggleBold') active = editor.isActive('bold');
+                    else if (action === 'toggleItalic') active = editor.isActive('italic');
+                    else if (action === 'toggleUnderline') active = editor.isActive('underline');
+                    else if (action === 'toggleStrike') active = editor.isActive('strike');
+                    else if (action === 'toggleCode') active = editor.isActive('code');
+                    else if (action.startsWith('setHeading-')) {
+                        const level = parseInt(action.split('-')[1]);
+                        active = editor.isActive('heading', { level });
+                    } else if (action === 'setParagraph') active = editor.isActive('paragraph');
+                    else if (action === 'toggleBulletList') active = editor.isActive('bulletList');
+                    else if (action === 'toggleOrderedList') active = editor.isActive('orderedList');
+                    else if (action === 'toggleBlockquote') active = editor.isActive('blockquote');
+                    else if (action === 'toggleCodeBlock') active = editor.isActive('codeBlock');
+                    else if (action.startsWith('setTextAlign-')) {
+                        const align = action.split('-')[1];
+                        active = editor.isActive({ textAlign: align });
+                    }
+                    btn.classList.toggle('is-active', active);
+                });
+            }
+
+            triggerAutoSave() {
+                clearTimeout(this.autoSaveTimer);
+                this.els.autoSaveStatus.textContent = '编辑中...';
+                this.els.autoSaveStatus.classList.add('show');
+                this.autoSaveTimer = setTimeout(() => this.saveNote(), this.settings.autoSaveInterval);
+            }
+
+            handleTimestampInsert(format) {
+                if (format === 'custom') {
+                    this.showModal(this.els.customTimestampModal);
+                    this.updateFormatPreview();
+                } else {
+                    this.insertTimestamp(format);
+                }
+            }
+
+            insertTimestamp(format) {
+                const timestamp = this.formatTimestamp(new Date(), this.getTimestampFormat(format));
+                if (this.editor) {
+                    this.editor.chain().focus().insertContent(timestamp).run();
+                    this.triggerAutoSave();
+                }
+                this.els.timestampToolbar.style.display = 'none';
+            }
+
+            getTimestampFormat(format) {
+                const map = {
+                    datetime: 'YYYY年MM月DD日 HH:mm:ss', date: 'YYYY年MM月DD日',
+                    time: 'HH:mm:ss', week: 'YYYY年MM月DD日 ddd', custom: this.els.customFormatInput.value
+                };
+                return map[format] || map.datetime;
+            }
+
+            updateFormatPreview() {
+                const format = this.els.customFormatInput.value;
+                if (format.trim()) {
+                    this.els.formatPreview.textContent = this.formatTimestamp(new Date(), format);
+                }
+            }
+
+            formatTimestamp(date, format) {
+                const d = new Date(date);
+                const pad = n => n.toString().padStart(2, '0');
+                const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+                const repl = {
+                    'YYYY': d.getFullYear(), 'MM': pad(d.getMonth() + 1), 'DD': pad(d.getDate()),
+                    'HH': pad(d.getHours()), 'mm': pad(d.getMinutes()), 'ss': pad(d.getSeconds()),
+                    'ddd': weekdays[d.getDay()]
+                };
+                let result = format;
+                for (const [k, v] of Object.entries(repl)) {
+                    result = result.replace(new RegExp(k, 'g'), v);
+                }
+                return result;
+            }
+
+            insertImage() {
+                const input = document.createElement('input');
+                input.type = 'file'; input.accept = 'image/*';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            const compressed = await compressImage(file);
+                            await this.handleImageFile(compressed);
+                        } catch (err) {
+                            console.error('[图片] 插入过程出错:', err);
+                        }
+                    }
+                    input.remove();
+                };
+                input.click();
+            }
+
+            handleImageFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const dataUrl = ev.target.result;
+                        if (this.editor) {
+                            try {
+                                this.editor.chain().focus().setImage({ src: dataUrl }).run();
+                                this.triggerAutoSave();
+                                resolve();
+                            } catch (err) {
+                                reject(err);
+                            }
+                        } else {
+                            reject(new Error('编辑器未初始化'));
+                        }
+                    };
+                    reader.onerror = () => reject(new Error('FileReader 读取失败'));
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            async exportNotes(format) {
+                let notes = await this.db.getAllNotes();
+                const cleanNotes = notes.map(n => {
+                    const { encryptedContent, ...rest } = n;
+                    return rest;
+                });
+                const categories = await this.db.getAllCategories();
+
+                if (format === 'json') {
+                    const data = { app: '素记日记', version: '3.1', exportDate: new Date().toISOString(), noteCount: cleanNotes.length, categories, notes: cleanNotes };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    this.downloadBlob(blob, `素记日记_${new Date().toISOString().slice(0,10)}.json`);
+                } else {
+                    let md = `# 素记日记 - 笔记导出\n\n- **导出时间**: ${this.formatTimestamp(new Date(), 'YYYY年MM月DD日 HH:mm:ss')}\n- **笔记总数**: ${cleanNotes.length}\n\n---\n\n`;
+                    cleanNotes.forEach((n, i) => {
+                        const cat = categories.find(c => c.id === n.category);
+                        md += `## 笔记 ${i+1}: ${n.title}\n\n- **分类**: ${cat ? cat.name : n.category}\n- **更新**: ${this.formatTimestamp(new Date(n.updatedAt), 'YYYY年MM月DD日 HH:mm:ss')}\n\n---\n\n${extractText(n.content)}\n\n---\n\n`;
+                    });
+                    const blob = new Blob([md], { type: 'text/markdown' });
+                    this.downloadBlob(blob, `素记日记_${new Date().toISOString().slice(0,10)}.md`);
+                }
+            }
+
+            downloadBlob(blob, filename) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             }
 
             importJSON(file) {
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
                     try {
-                        const data = JSON.parse(ev.target.result); let notes = [], categories = [];
-                        if (data && typeof data === 'object' && !Array.isArray(data)) { if (data.notes) notes = data.notes; if (data.categories) categories = data.categories; } else if (Array.isArray(data)) { notes = data; } else { throw new Error('格式错误'); }
-                        if (categories.length > 0) { for (const c of categories) await this.db.saveCategory(c); await this.renderCategories(); }
+                        const data = JSON.parse(ev.target.result);
+                        let notes = []; let categories = [];
+                        if (data && typeof data === 'object' && !Array.isArray(data)) {
+                            if (data.notes) notes = data.notes;
+                            if (data.categories) categories = data.categories;
+                        } else if (Array.isArray(data)) {
+                            notes = data;
+                        } else {
+                            throw new Error('不支持的文件格式');
+                        }
+                        if (categories.length > 0) {
+                            for (const c of categories) await this.db.saveCategory(c);
+                            await this.renderCategories();
+                        }
                         let count = 0;
-                        for (const note of notes) { let content = note.content; if (typeof content === 'string') content = this.convertPlainToJSON(content); const newNote = { id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' + count, title: note.title || '未命名笔记', content: content || { type: 'doc', content: [{ type: 'paragraph' }] }, category: note.category || 'daily', createdAt: note.createdAt || new Date().toISOString(), updatedAt: note.updatedAt || new Date().toISOString() }; await this.db.saveNote(newNote); count++; }
-                        alert(`成功导入 ${count} 条笔记`); await this.renderNotes(); await this.renderCategories();
-                    } catch (err) { alert('导入失败: ' + err.message); }
-                }; reader.readAsText(file);
+                        for (const note of notes) {
+                            let content = note.content;
+                            if (typeof content === 'string') content = convertPlainToJSON(content);
+                            const newNote = {
+                                id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' + count,
+                                title: note.title || '未命名笔记',
+                                content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
+                                category: note.category || 'daily',
+                                createdAt: note.createdAt || new Date().toISOString(),
+                                updatedAt: note.updatedAt || new Date().toISOString()
+                            };
+                            await this.db.saveNote(newNote);
+                            count++;
+                        }
+                        alert(`成功导入 ${count} 条笔记${categories.length ? ` 和 ${categories.length} 个分类` : ''}`);
+                        this.renderNotes();
+                        this.renderCategories();
+                    } catch (err) {
+                        alert('导入失败: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
             }
 
             importMarkdown(file) {
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
-                    const content = ev.target.result; const lines = content.split('\n'); let currentNote = null, count = 0;
-                    for (const line of lines) { if (line.startsWith('## 笔记')) { if (currentNote) { await this.saveCurrentNote(currentNote); count++; } const match = line.match(/## 笔记 \d+: (.+)/); currentNote = { title: match ? match[1] : '未命名笔记', content: '', category: 'daily' }; } else if (currentNote && line.trim() && !line.startsWith('- **')) { currentNote.content += line + '\n'; } }
+                    const content = ev.target.result;
+                    const lines = content.split('\n');
+                    let currentNote = null, count = 0;
+                    for (const line of lines) {
+                        if (line.startsWith('## 笔记')) {
+                            if (currentNote) {
+                                await this.saveCurrentNote(currentNote);
+                                count++;
+                            }
+                            const match = line.match(/## 笔记 \d+: (.+)/);
+                            currentNote = { title: match ? match[1] : '未命名笔记', content: '', category: 'daily' };
+                        } else if (currentNote && line.trim() && !line.startsWith('- **')) {
+                            currentNote.content += line + '\n';
+                        }
+                    }
                     if (currentNote) { await this.saveCurrentNote(currentNote); count++; }
-                    alert(`成功导入 ${count} 条笔记`); await this.renderNotes();
-                }; reader.readAsText(file);
+                    alert(`成功导入 ${count} 条笔记`);
+                    this.renderNotes();
+                };
+                reader.readAsText(file);
             }
 
-            async saveCurrentNote(note) { const content = this.convertPlainToJSON(note.content.trim()); await this.db.saveNote({ id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8), title: note.title, content, category: note.category || 'daily', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); }
+            async saveCurrentNote(note) {
+                const content = convertPlainToJSON(note.content.trim());
+                const newNote = {
+                    id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
+                    title: note.title, content: content,
+                    category: note.category || 'daily',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                await this.db.saveNote(newNote);
+            }
 
-            toggleTheme() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark'); localStorage.setItem('simpleNotesTheme', isDark ? 'light' : 'dark'); this.els.themeBtn.innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>'; }
-            initTheme() { const saved = localStorage.getItem('simpleNotesTheme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; if (saved === 'dark' || (!saved && prefersDark)) { document.documentElement.setAttribute('data-theme', 'dark'); this.els.themeBtn.innerHTML = '<i class="fas fa-sun"></i>'; } else { this.els.themeBtn.innerHTML = '<i class="fas fa-moon"></i>'; } }
+            bindGlobalEvents() {
+                this.els.addButton.addEventListener('click', () => this.openEditor());
+
+                this.els.closeEditor.addEventListener('click', () => this.closeEditor(true));
+                this.els.saveNote.addEventListener('click', () => this.saveNote(true));
+                this.els.deleteNote.addEventListener('click', () => this.deleteNote());
+
+                this.els.searchBtn.addEventListener('click', () => {
+                    const display = this.els.searchContainer.style.display;
+                    this.els.searchContainer.style.display = display === 'none' ? 'block' : 'none';
+                    if (display === 'none') this.els.searchInput.focus();
+                });
+                this.els.searchInput.addEventListener('input', () => this.renderNotes());
+                this.els.clearSearch.addEventListener('click', () => {
+                    this.els.searchInput.value = ''; this.renderNotes();
+                });
+
+                this.els.categoryManageBtn.addEventListener('click', async () => {
+                    await this.renderCategoryList();
+                    this.showModal(this.els.categoryManageModal);
+                });
+                this.els.closeCategoryManageModal.addEventListener('click', () => this.hideModal(this.els.categoryManageModal));
+                this.els.addNewCategoryBtn.addEventListener('click', async () => {
+                    const name = this.els.newCategoryName.value.trim();
+                    const color = this.els.newCategoryColor.value;
+                    if (!name) return;
+                    const cats = await this.db.getAllCategories();
+                    const newOrder = cats.length > 0 ? Math.max(...cats.map(c => c.order || 0)) + 1 : 0;
+                    await this.db.saveCategory({ id: 'cat_' + Date.now(), name, color, order: newOrder });
+                    this.els.newCategoryName.value = '';
+                    this.renderCategoryList();
+                    this.renderCategories();
+                });
+
+                this.els.exportBtn.addEventListener('click', () => {
+                    const display = this.els.exportSection.style.display;
+                    this.els.exportSection.style.display = display === 'none' ? 'block' : 'none';
+                    this.els.settingsSection.style.display = display === 'none' ? 'block' : 'none';
+                });
+
+                this.els.exportJsonBtn.addEventListener('click', () => this.exportNotes('json'));
+                this.els.exportMarkdownBtn.addEventListener('click', () => this.exportNotes('markdown'));
+
+                this.els.importJsonBtn.addEventListener('click', () => this.showModal(this.els.importModal));
+                this.els.closeImportModal.addEventListener('click', () => this.hideModal(this.els.importModal));
+                this.els.importJsonBtn2.addEventListener('click', () => {
+                    this.hideModal(this.els.importModal);
+                    const input = document.createElement('input');
+                    input.type = 'file'; input.accept = '.json';
+                    input.onchange = (e) => { if (e.target.files[0]) this.importJSON(e.target.files[0]); };
+                    input.click();
+                });
+                this.els.importTxtBtn.addEventListener('click', () => {
+                    this.hideModal(this.els.importModal);
+                    const input = document.createElement('input');
+                    input.type = 'file'; input.accept = '.md,.txt';
+                    input.onchange = (e) => { if (e.target.files[0]) this.importMarkdown(e.target.files[0]); };
+                    input.click();
+                });
+
+                this.els.backupBtn.addEventListener('click', async () => {
+                    let notes = await this.db.getAllNotes();
+                    const cleanNotes = notes.map(({ encryptedContent, ...rest }) => rest);
+                    const cats = await this.db.getAllCategories();
+                    const data = { timestamp: new Date().toISOString(), notes: cleanNotes, categories: cats };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    this.downloadBlob(blob, `素记备份_${new Date().toISOString().slice(0,10)}.json`);
+                });
+
+                this.els.clearDataBtn.addEventListener('click', () => this.showModal(this.els.clearDataModal));
+                this.els.closeClearDataModal.addEventListener('click', () => this.hideModal(this.els.clearDataModal));
+                this.els.cancelClearData.addEventListener('click', () => this.hideModal(this.els.clearDataModal));
+                this.els.confirmClearData.addEventListener('click', async () => {
+                    await this.db.clearAll();
+                    this.hideModal(this.els.clearDataModal);
+                    this.renderNotes();
+                    this.renderCategories();
+                });
+
+                this.els.categories.addEventListener('click', e => {
+                    if (e.target.classList.contains('category-btn')) {
+                        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentFilter = e.target.dataset.id;
+                        this.renderNotes();
+                    }
+                });
+
+                this.els.autoSaveIntervalInput.addEventListener('change', e => {
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= 300) {
+                        this.settings.autoSaveInterval = val * 1000;
+                        this.db.setSetting('autoSaveInterval', this.settings.autoSaveInterval);
+                    }
+                });
+                this.els.autoSaveShowStatus.addEventListener('change', e => {
+                    this.settings.showAutoSaveStatus = e.target.checked;
+                    this.db.setSetting('showAutoSaveStatus', this.settings.showAutoSaveStatus);
+                });
+
+                this.els.themeBtn.addEventListener('click', () => this.toggleTheme());
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.els.editorContainer.classList.contains('active')) {
+                        this.closeEditor(true);
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's' && this.els.editorContainer.classList.contains('active')) {
+                        e.preventDefault(); this.saveNote(true);
+                    }
+                });
+
+                this.els.closeCustomTimestampModal.addEventListener('click', () => this.hideModal(this.els.customTimestampModal));
+                this.els.cancelCustomTimestamp.addEventListener('click', () => this.hideModal(this.els.customTimestampModal));
+                this.els.insertCustomTimestamp.addEventListener('click', () => {
+                    this.insertTimestamp('custom');
+                    this.hideModal(this.els.customTimestampModal);
+                });
+                this.els.customFormatInput.addEventListener('input', () => this.updateFormatPreview());
+                document.querySelectorAll('[data-preset]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.els.customFormatInput.value = btn.dataset.preset;
+                        this.updateFormatPreview();
+                    });
+                });
+            }
+
+            showModal(modal) { modal.classList.add('active'); }
+            hideModal(modal) { modal.classList.remove('active'); }
+
+            loadSettingsToUI() {
+                this.db.getSetting('autoSaveInterval').then(val => {
+                    if (val) { this.settings.autoSaveInterval = val; this.els.autoSaveIntervalInput.value = val / 1000; }
+                });
+                this.db.getSetting('showAutoSaveStatus').then(val => {
+                    if (val !== undefined) { this.settings.showAutoSaveStatus = val; this.els.autoSaveShowStatus.checked = val; }
+                });
+            }
+
+            toggleTheme() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+                localStorage.setItem('simpleNotesTheme', isDark ? 'light' : 'dark');
+                this.els.themeBtn.innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+            }
+
+            initTheme() {
+                const saved = localStorage.getItem('simpleNotesTheme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (saved === 'dark' || (!saved && prefersDark)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    this.els.themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+                }
+            }
         }
 
-        // 暴露初始化函数，只调用一次
-        window.SN.initMainApp = async function() {
-            if (window.SN.appInstance) {
-                // 已初始化，直接返回
-                return window.SN.appInstance;
-            }
-            const app = new App();
-            await app.init();
-            window.SN.appInstance = app;
-            return app;
-        };
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new App();
+        });
 
-        // 如果已解锁，立即初始化
-        if (window.SN.unlocked) {
-            window.SN.initMainApp().catch(err => console.error('主应用初始化失败:', err));
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
         }
     </script>
 </body>
