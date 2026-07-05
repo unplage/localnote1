@@ -7,106 +7,106 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
     <style>
-        /* 请放心，完整代码中已包含所有样式 */
-        * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-        :root { --primary-color: #5D5CDE; --secondary-color: #8A8AFF; --bg-color: #F8F9FA; --card-color: #FFFFFF; --text-primary: #333333; --text-secondary: #777777; --border-color: #E0E0E0; --shadow: 0 2px 12px rgba(0,0,0,0.06); --radius: 12px; --radius-sm: 8px; --danger-color: #FF3B30; --success-color: #34C759; --toolbar-bg: #f5f5f7; --safe-area-bottom: env(safe-area-inset-bottom); --warning-color: #FF9500; }
-        [data-theme="dark"] { --bg-color: #121212; --card-color: #1E1E1E; --text-primary: #E0E0E0; --text-secondary: #AAAAAA; --border-color: #333333; --shadow: 0 2px 12px rgba(0,0,0,0.3); --toolbar-bg: #2a2a2a; }
-        body { background-color: var(--bg-color); color: var(--text-primary); line-height: 1.5; overflow-x: hidden; }
-        .container { max-width: 800px; margin: 0 auto; padding: 0 16px; }
-        .lock-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: var(--bg-color); z-index:5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.4s ease; }
-        .lock-screen.hide { opacity:0; pointer-events:none; }
-        .lock-card { background: var(--card-color); padding: 32px 28px; border-radius: var(--radius); box-shadow: var(--shadow); width: 100%; max-width: 360px; text-align: center; }
-        .lock-card i { font-size: 48px; color: var(--primary-color); margin-bottom: 16px; }
-        .lock-card h2 { margin-bottom: 8px; }
-        .lock-card p { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
-        .lock-input { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 16px; margin-bottom: 12px; text-align: center; background: var(--card-color); color: var(--text-primary); }
-        .lock-input:focus { outline: none; border-color: var(--primary-color); }
-        .lock-btn { width: 100%; padding: 14px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        .lock-btn:active { background: var(--secondary-color); }
-        .lock-error { color: var(--danger-color); font-size: 13px; margin-top: 12px; display: none; }
-        .header { background-color: var(--card-color); padding: 16px 0; position: sticky; top:0; z-index: 100; box-shadow: var(--shadow); border-bottom: 1px solid var(--border-color); }
-        .header-content { display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 24px; font-weight: 700; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
-        .header-actions { display: flex; gap: 8px; }
-        .icon-btn { background: none; border: none; font-size: 20px; color: var(--text-secondary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
-        .icon-btn:active { background-color: rgba(0,0,0,0.1); }
-        .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .main-content { padding: 20px 0 80px; }
-        .search-container { margin-bottom: 16px; position: relative; display: none; }
-        .search-box { width: 100%; padding: 14px 20px 14px 48px; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 16px; background-color: var(--card-color); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23777777' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 14px center; background-size: 18px; }
-        .search-box:focus { outline: none; border-color: var(--primary-color); }
-        .clear-search { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; display: none; cursor: pointer; color: var(--text-secondary); }
-        .categories { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; white-space: nowrap; }
-        .category-btn { padding: 8px 16px; background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
-        .category-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        .notes-list { display: flex; flex-direction: column; gap: 12px; }
-        .note-item { background-color: var(--card-color); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); cursor: pointer; border-left: 4px solid var(--primary-color); transition: transform 0.1s; }
-        .note-item:active { transform: scale(0.98); }
-        .note-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-        .note-content-preview { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .note-footer { display: flex; justify-content: space-between; align-items: center; }
-        .note-time { font-size: 12px; color: var(--text-secondary); }
-        .note-category { font-size: 11px; padding: 2px 8px; border-radius: 10px; background-color: rgba(93,92,222,0.1); color: var(--primary-color); }
-        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
-        .empty-state i { font-size: 48px; margin-bottom: 16px; color: #DDD; }
-        .offline-banner { background: var(--warning-color); color: white; padding: 8px; text-align: center; font-size: 13px; border-radius: 8px; margin-bottom: 12px; }
-        .editor-container { position: fixed; top:0; left:0; width:100%; height:100%; background-color: var(--card-color); z-index:1000; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: contain; }
-        .editor-container.active { transform: translateX(0); }
-        .editor-container.swiping { transition: none; }
-        .editor-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); flex-shrink:0; padding-top: max(12px, env(safe-area-inset-top)); }
-        .editor-actions { display: flex; gap: 8px; }
-        .editor-header .auto-save-status { flex:1; text-align: center; font-size: 12px; color: var(--text-secondary); opacity:0; transition: opacity 0.3s; }
-        .editor-header .auto-save-status.show { opacity:1; }
-        .editor-content { flex:1; padding: 16px; display: flex; flex-direction: column; min-height:0; overflow: hidden; }
-        .title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .note-title-input { width: 100%; font-size: 22px; font-weight: 600; border: none; outline: none; background: transparent; color: var(--text-primary); margin-bottom:0; flex:1; min-width:0; }
-        .category-select { width: auto; max-width: 120px; padding: 6px 10px; font-size: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--card-color); color: var(--text-primary); }
-        .toolbar-toggle-container { text-align: center; margin-bottom: 12px; }
-        .toolbar-toggle-btn { background: transparent; border: 1px dashed var(--border-color); color: var(--text-secondary); padding: 4px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-        .toolbar-toggle-btn:active { background: var(--toolbar-bg); color: var(--primary-color); }
-        .editor-toolbar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 8px; background: var(--toolbar-bg); border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid var(--border-color); }
-        .toolbar-group { display: flex; gap: 2px; padding-right: 6px; margin-right: 6px; border-right: 1px solid var(--border-color); }
-        .toolbar-group:last-child { border-right: none; margin-right: 0; }
-        .editor-toolbar button { background: transparent; border: none; padding: 6px 8px; border-radius: 4px; color: var(--text-secondary); font-size: 14px; cursor: pointer; min-width: 30px; transition: all 0.15s ease; }
-        .editor-toolbar button:hover { background: rgba(93,92,222,0.1); color: var(--primary-color); }
-        .editor-toolbar button.is-active { background: var(--primary-color); color: white; }
-        .color-picker-group label { display: flex; align-items: center; gap: 2px; cursor: pointer; font-size: 12px; color: var(--text-secondary); }
-        .color-picker-group input[type="color"] { width: 24px; height: 24px; border: none; background: transparent; cursor: pointer; padding: 0; }
-        .editor-toolbar select { padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; background: var(--card-color); color: var(--text-primary); }
-        #tiptap-editor { flex:1; font-size: 16px; line-height: 1.6; outline: none; padding-bottom: 40px; min-height:0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-        .ProseMirror { outline: none; min-height: 100%; }
-        .ProseMirror p { margin: 0 0 0.5em 0; }
-        .ProseMirror h1 { font-size: 1.5em; margin: 0.5em 0 0.3em; }
-        .ProseMirror h2 { font-size: 1.3em; margin: 0.5em 0 0.3em; }
-        .ProseMirror ul, .ProseMirror ol { padding-left: 1.5em; margin: 0 0 0.5em 0; }
-        .ProseMirror blockquote { border-left: 3px solid var(--border-color); padding-left: 1em; color: var(--text-secondary); margin: 0 0 0.5em 0; }
-        .ProseMirror code { background: rgba(175,184,193,0.2); border-radius: 4px; padding: 0.2em 0.4em; font-size: 0.9em; }
-        .ProseMirror pre { background: #f6f8fa; border-radius: 6px; padding: 1em; margin: 0 0 0.5em 0; overflow: auto; }
-        .ProseMirror img { max-width: 100%; height: auto; border-radius: 8px; }
-        .timestamp-toolbar { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-        .timestamp-btn { padding: 6px 12px; background: rgba(93,92,222,0.1); border: 1px solid rgba(93,92,222,0.2); border-radius: var(--radius-sm); color: var(--primary-color); font-size: 13px; cursor: pointer; }
-        .timestamp-btn:hover { background: rgba(93,92,222,0.2); }
-        .add-button { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background-color: var(--primary-color); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 16px rgba(93,92,222,0.4); z-index:100; display: flex; align-items: center; justify-content: center; }
-        .add-button:active { transform: scale(0.92); }
-        .export-section { margin-top: 20px; background: var(--card-color); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); }
-        .export-section button { width: 100%; padding: 12px; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 8px; }
-        .export-section button:last-child { margin-bottom: 0; }
-        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index:2000; display: flex; align-items: center; justify-content: center; opacity:0; visibility: hidden; transition: all 0.3s; }
-        .modal-overlay.active { opacity:1; visibility: visible; }
-        .modal { background: var(--card-color); border-radius: var(--radius); width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s; }
-        .modal-overlay.active .modal { transform: translateY(0); }
-        .modal-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h3 { font-size: 20px; }
-        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
-        .modal-body { padding: 20px; }
-        .modal-footer { padding: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; }
-        .modal-btn { padding: 10px 20px; border-radius: var(--radius-sm); border: none; font-size: 16px; cursor: pointer; }
-        .modal-btn.primary { background: var(--primary-color); color: white; }
-        .modal-btn.secondary { background: var(--card-color); border: 1px solid var(--border-color); color: var(--text-primary); }
-        @media (max-width:480px) { .container { padding: 0 12px; } .header { padding: 12px 0; } .logo { font-size: 20px; } .editor-toolbar button { padding: 4px 6px; font-size: 12px; min-width: 26px; } }
-        [data-theme="dark"] .search-box { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23AAAAAA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E"); }
-        [data-theme="dark"] .lock-card { background: #1E1E1E; }
-        [data-theme="dark"] .ProseMirror pre { background: #1e1e1e; }
+        /* ===== 样式与之前完全一致，保持所有功能样式 ===== */
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+        :root{--primary-color:#5D5CDE;--secondary-color:#8A8AFF;--bg-color:#F8F9FA;--card-color:#FFFFFF;--text-primary:#333333;--text-secondary:#777777;--border-color:#E0E0E0;--shadow:0 2px 12px rgba(0,0,0,0.06);--radius:12px;--radius-sm:8px;--danger-color:#FF3B30;--success-color:#34C759;--toolbar-bg:#f5f5f7;--safe-area-bottom:env(safe-area-inset-bottom);--warning-color:#FF9500}
+        [data-theme="dark"]{--bg-color:#121212;--card-color:#1E1E1E;--text-primary:#E0E0E0;--text-secondary:#AAAAAA;--border-color:#333333;--shadow:0 2px 12px rgba(0,0,0,0.3);--toolbar-bg:#2a2a2a}
+        body{background-color:var(--bg-color);color:var(--text-primary);line-height:1.5;overflow-x:hidden}
+        .container{max-width:800px;margin:0 auto;padding:0 16px}
+        .lock-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg-color);z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:opacity 0.4s ease}
+        .lock-screen.hide{opacity:0;pointer-events:none}
+        .lock-card{background:var(--card-color);padding:32px 28px;border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:360px;text-align:center}
+        .lock-card i{font-size:48px;color:var(--primary-color);margin-bottom:16px}
+        .lock-card h2{margin-bottom:8px}
+        .lock-card p{font-size:14px;color:var(--text-secondary);margin-bottom:24px}
+        .lock-input{width:100%;padding:14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);font-size:16px;margin-bottom:12px;text-align:center;background:var(--card-color);color:var(--text-primary)}
+        .lock-input:focus{outline:none;border-color:var(--primary-color)}
+        .lock-btn{width:100%;padding:14px;background:var(--primary-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:500;cursor:pointer;transition:background 0.2s}
+        .lock-btn:active{background:var(--secondary-color)}
+        .lock-error{color:var(--danger-color);font-size:13px;margin-top:12px;display:none}
+        .header{background-color:var(--card-color);padding:16px 0;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);border-bottom:1px solid var(--border-color)}
+        .header-content{display:flex;justify-content:space-between;align-items:center}
+        .logo{font-size:24px;font-weight:700;color:var(--primary-color);display:flex;align-items:center;gap:8px}
+        .header-actions{display:flex;gap:8px}
+        .icon-btn{background:none;border:none;font-size:20px;color:var(--text-secondary);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s}
+        .icon-btn:active{background-color:rgba(0,0,0,0.1)}
+        .icon-btn:disabled{opacity:0.3;cursor:not-allowed}
+        .main-content{padding:20px 0 80px}
+        .search-container{margin-bottom:16px;position:relative;display:none}
+        .search-box{width:100%;padding:14px 20px 14px 48px;border:1px solid var(--border-color);border-radius:var(--radius);font-size:16px;background-color:var(--card-color);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23777777' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;background-size:18px}
+        .search-box:focus{outline:none;border-color:var(--primary-color)}
+        .clear-search{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;display:none;cursor:pointer;color:var(--text-secondary)}
+        .categories{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;white-space:nowrap}
+        .category-btn{padding:8px 16px;background-color:var(--card-color);border:1px solid var(--border-color);border-radius:20px;color:var(--text-secondary);font-size:14px;cursor:pointer}
+        .category-btn.active{background-color:var(--primary-color);color:white;border-color:var(--primary-color)}
+        .notes-list{display:flex;flex-direction:column;gap:12px}
+        .note-item{background-color:var(--card-color);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);cursor:pointer;border-left:4px solid var(--primary-color);transition:transform 0.1s}
+        .note-item:active{transform:scale(0.98)}
+        .note-title{font-size:17px;font-weight:600;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+        .note-content-preview{font-size:14px;color:var(--text-secondary);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .note-footer{display:flex;justify-content:space-between;align-items:center}
+        .note-time{font-size:12px;color:var(--text-secondary)}
+        .note-category{font-size:11px;padding:2px 8px;border-radius:10px;background-color:rgba(93,92,222,0.1);color:var(--primary-color)}
+        .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary)}
+        .empty-state i{font-size:48px;margin-bottom:16px;color:#DDD}
+        .offline-banner{background:var(--warning-color);color:white;padding:8px;text-align:center;font-size:13px;border-radius:8px;margin-bottom:12px}
+        .editor-container{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--card-color);z-index:1000;transform:translateX(100%);transition:transform 0.3s ease;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain}
+        .editor-container.active{transform:translateX(0)}
+        .editor-container.swiping{transition:none}
+        .editor-header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);flex-shrink:0;padding-top:max(12px,env(safe-area-inset-top))}
+        .editor-actions{display:flex;gap:8px}
+        .editor-header .auto-save-status{flex:1;text-align:center;font-size:12px;color:var(--text-secondary);opacity:0;transition:opacity 0.3s}
+        .editor-header .auto-save-status.show{opacity:1}
+        .editor-content{flex:1;padding:16px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+        .title-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+        .note-title-input{width:100%;font-size:22px;font-weight:600;border:none;outline:none;background:transparent;color:var(--text-primary);margin-bottom:0;flex:1;min-width:0}
+        .category-select{width:auto;max-width:120px;padding:6px 10px;font-size:14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--card-color);color:var(--text-primary)}
+        .toolbar-toggle-container{text-align:center;margin-bottom:12px}
+        .toolbar-toggle-btn{background:transparent;border:1px dashed var(--border-color);color:var(--text-secondary);padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer;transition:all 0.2s}
+        .toolbar-toggle-btn:active{background:var(--toolbar-bg);color:var(--primary-color)}
+        .editor-toolbar{display:none;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--toolbar-bg);border-radius:var(--radius-sm);margin-bottom:12px;border:1px solid var(--border-color)}
+        .toolbar-group{display:flex;gap:2px;padding-right:6px;margin-right:6px;border-right:1px solid var(--border-color)}
+        .toolbar-group:last-child{border-right:none;margin-right:0}
+        .editor-toolbar button{background:transparent;border:none;padding:6px 8px;border-radius:4px;color:var(--text-secondary);font-size:14px;cursor:pointer;min-width:30px;transition:all 0.15s ease}
+        .editor-toolbar button:hover{background:rgba(93,92,222,0.1);color:var(--primary-color)}
+        .editor-toolbar button.is-active{background:var(--primary-color);color:white}
+        .color-picker-group label{display:flex;align-items:center;gap:2px;cursor:pointer;font-size:12px;color:var(--text-secondary)}
+        .color-picker-group input[type="color"]{width:24px;height:24px;border:none;background:transparent;cursor:pointer;padding:0}
+        .editor-toolbar select{padding:4px;border:1px solid var(--border-color);border-radius:4px;font-size:12px;background:var(--card-color);color:var(--text-primary)}
+        #tiptap-editor{flex:1;font-size:16px;line-height:1.6;outline:none;padding-bottom:40px;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+        .ProseMirror{outline:none;min-height:100%}
+        .ProseMirror p{margin:0 0 0.5em 0}
+        .ProseMirror h1{font-size:1.5em;margin:0.5em 0 0.3em}
+        .ProseMirror h2{font-size:1.3em;margin:0.5em 0 0.3em}
+        .ProseMirror ul,.ProseMirror ol{padding-left:1.5em;margin:0 0 0.5em 0}
+        .ProseMirror blockquote{border-left:3px solid var(--border-color);padding-left:1em;color:var(--text-secondary);margin:0 0 0.5em 0}
+        .ProseMirror code{background:rgba(175,184,193,0.2);border-radius:4px;padding:0.2em 0.4em;font-size:0.9em}
+        .ProseMirror pre{background:#f6f8fa;border-radius:6px;padding:1em;margin:0 0 0.5em 0;overflow:auto}
+        .ProseMirror img{max-width:100%;height:auto;border-radius:8px}
+        .timestamp-toolbar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+        .timestamp-btn{padding:6px 12px;background:rgba(93,92,222,0.1);border:1px solid rgba(93,92,222,0.2);border-radius:var(--radius-sm);color:var(--primary-color);font-size:13px;cursor:pointer}
+        .timestamp-btn:hover{background:rgba(93,92,222,0.2)}
+        .add-button{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background-color:var(--primary-color);color:white;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(93,92,222,0.4);z-index:100;display:flex;align-items:center;justify-content:center}
+        .add-button:active{transform:scale(0.92)}
+        .export-section{margin-top:20px;background:var(--card-color);padding:16px;border-radius:var(--radius);box-shadow:var(--shadow)}
+        .export-section button{width:100%;padding:12px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
+        .export-section button:last-child{margin-bottom:0}
+        .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all 0.3s}
+        .modal-overlay.active{opacity:1;visibility:visible}
+        .modal{background:var(--card-color);border-radius:var(--radius);width:90%;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2);transform:translateY(20px);transition:transform 0.3s}
+        .modal-overlay.active .modal{transform:translateY(0)}
+        .modal-header{padding:20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}
+        .modal-header h3{font-size:20px}
+        .modal-close{background:none;border:none;font-size:24px;cursor:pointer}
+        .modal-body{padding:20px}
+        .modal-footer{padding:20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:12px}
+        .modal-btn{padding:10px 20px;border-radius:var(--radius-sm);border:none;font-size:16px;cursor:pointer}
+        .modal-btn.primary{background:var(--primary-color);color:white}
+        .modal-btn.secondary{background:var(--card-color);border:1px solid var(--border-color);color:var(--text-primary)}
+        @media (max-width:480px){.container{padding:0 12px}.header{padding:12px 0}.logo{font-size:20px}.editor-toolbar button{padding:4px 6px;font-size:12px;min-width:26px}}
+        [data-theme="dark"] .search-box{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23AAAAAA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E")}
+        [data-theme="dark"] .lock-card{background:#1E1E1E}
+        [data-theme="dark"] .ProseMirror pre{background:#1e1e1e}
     </style>
 </head>
 <body>
@@ -122,7 +122,7 @@
         </div>
     </div>
 
-    <!-- 主界面容器（默认可见，锁屏覆盖） -->
+    <!-- 主界面 -->
     <div id="appContent">
         <header class="header">
             <div class="container">
@@ -145,13 +145,13 @@
                 </div>
                 <div class="categories" id="categories"></div>
                 <div class="notes-list" id="notesList"></div>
-                <div class="export-section" id="exportSection" style="display: none;">
+                <div class="export-section" id="exportSection" style="display:none;">
                     <h3 style="margin-bottom:12px;"><i class="fas fa-file-export"></i> 数据管理</h3>
-                    <button class="lock-btn" id="exportJsonBtn" style="background: var(--text-secondary);">📥 导出 JSON (明文)</button>
-                    <button class="lock-btn" id="exportMarkdownBtn" style="background: var(--secondary-color);">📄 导出 Markdown</button>
-                    <button class="lock-btn" id="importJsonBtn" style="background: var(--primary-color);">📤 导入 JSON</button>
-                    <button class="lock-btn" id="backupBtn" style="background: var(--success-color);">💾 创建备份</button>
-                    <button class="lock-btn" id="clearDataBtn" style="background: var(--danger-color);">🗑️ 清除所有数据</button>
+                    <button class="lock-btn" id="exportJsonBtn" style="background:var(--text-secondary);">📥 导出 JSON (明文)</button>
+                    <button class="lock-btn" id="exportMarkdownBtn" style="background:var(--secondary-color);">📄 导出 Markdown</button>
+                    <button class="lock-btn" id="importJsonBtn" style="background:var(--primary-color);">📤 导入 JSON</button>
+                    <button class="lock-btn" id="backupBtn" style="background:var(--success-color);">💾 创建备份</button>
+                    <button class="lock-btn" id="clearDataBtn" style="background:var(--danger-color);">🗑️ 清除所有数据</button>
                 </div>
             </div>
         </main>
@@ -171,9 +171,7 @@
                     <select class="category-select" id="categorySelect"></select>
                 </div>
                 <div class="toolbar-toggle-container">
-                    <button id="toggleToolbarBtn" class="toolbar-toggle-btn">
-                        <i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span>
-                    </button>
+                    <button id="toggleToolbarBtn" class="toolbar-toggle-btn"><i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span></button>
                 </div>
                 <div class="editor-toolbar" id="editorToolbar">
                     <div class="toolbar-group">
@@ -216,7 +214,7 @@
                     </div>
                 </div>
                 <div id="tiptap-editor"></div>
-                <div class="timestamp-toolbar" id="timestampToolbar" style="display: none;">
+                <div class="timestamp-toolbar" id="timestampToolbar" style="display:none;">
                     <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
                     <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
                     <button class="timestamp-btn" data-format="time"><i class="fas fa-clock"></i> 时间</button>
@@ -228,293 +226,282 @@
         <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
     </div>
 
-    <!-- 模态框 -->
+    <!-- 模态框（与之前一致，略） -->
     <div class="modal-overlay" id="categoryManageModal"><div class="modal"><div class="modal-header"><h3><i class="fas fa-tags"></i> 管理分类</h3><button class="modal-close" id="closeCategoryManageModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><div id="categoryList"></div><div style="display:flex;gap:8px;margin-top:12px;"><input type="text" id="newCategoryName" placeholder="新分类名称" style="flex:1;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"><input type="color" id="newCategoryColor" value="#5D5CDE" style="width:40px;height:40px;border:none;cursor:pointer;"><button class="lock-btn" id="addNewCategoryBtn" style="flex:0 0 auto;background:var(--primary-color);">添加</button></div></div></div></div>
     <div class="modal-overlay" id="customTimestampModal"><div class="modal"><div class="modal-header"><h3>自定义时间戳格式</h3><button class="modal-close" id="closeCustomTimestampModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><div><label>格式字符串:</label><input type="text" id="customFormatInput" value="YYYY年MM月DD日 HH:mm:ss" style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"></div><div style="margin-top:12px;"><label>预览:</label><div id="formatPreview" style="padding:8px;background:rgba(93,92,222,0.05);border-radius:4px;"></div></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH:mm:ss">标准</button><button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH时mm分">中文</button><button class="timestamp-btn" data-preset="DD/MM/YYYY">日期</button><button class="timestamp-btn" data-preset="HH:mm:ss">时间</button></div></div><div class="modal-footer"><button class="modal-btn secondary" id="cancelCustomTimestamp">取消</button><button class="modal-btn primary" id="insertCustomTimestamp">插入</button></div></div></div>
     <div class="modal-overlay" id="importModal"><div class="modal"><div class="modal-header"><h3>导入笔记</h3><button class="modal-close" id="closeImportModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><p>请选择要导入的文件格式：</p><div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;"><button class="lock-btn" id="importJsonBtn2" style="background:var(--primary-color);">导入 JSON 文件</button><button class="lock-btn" id="importTxtBtn" style="background:var(--secondary-color);">导入 Markdown 文件</button></div><p style="font-size:12px;color:var(--text-secondary);margin-top:12px;">注意：导入会添加新笔记，不会删除现有笔记。</p></div></div></div>
     <div class="modal-overlay" id="clearDataModal"><div class="modal"><div class="modal-header"><h3><i class="fas fa-exclamation-triangle" style="color:var(--danger-color);"></i> 清除所有数据</h3><button class="modal-close" id="closeClearDataModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><p>您确定要清除所有笔记数据吗？此操作无法撤销！</p><p style="color:var(--danger-color);font-weight:500;">所有笔记将被永久删除。</p></div><div class="modal-footer"><button class="modal-btn secondary" id="cancelClearData">取消</button><button class="modal-btn danger" id="confirmClearData" style="background:var(--danger-color);color:white;">清除所有数据</button></div></div></div>
 
-    <!-- ===== 独立锁屏脚本（纯原生 JS，离线可用） ===== -->
     <script>
-        class CryptoManager {
-            constructor() { this.key = null; }
-            async deriveKey(password, salt) {
-                const enc = new TextEncoder();
-                const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
-                this.key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-                return this.key;
+        // ===== 完全独立的锁屏脚本（离线可用） =====
+        (function() {
+            'use strict';
+
+            class CryptoManager {
+                constructor() { this.key = null; }
+                async deriveKey(password, salt) {
+                    const enc = new TextEncoder();
+                    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+                    this.key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+                    return this.key;
+                }
+                bufferToBase64(buffer) {
+                    return new Promise((resolve) => {
+                        const blob = new Blob([buffer]); const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result.split(',')[1]); reader.readAsDataURL(blob);
+                    });
+                }
+                async base64ToBuffer(base64) {
+                    const response = await fetch(`data:application/octet-stream;base64,${base64}`);
+                    return await response.arrayBuffer();
+                }
+                async encrypt(data) {
+                    if (!this.key) return data;
+                    try {
+                        const iv = crypto.getRandomValues(new Uint8Array(12));
+                        const encoded = new TextEncoder().encode(JSON.stringify(data));
+                        const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.key, encoded);
+                        const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+                        combined.set(iv, 0); combined.set(new Uint8Array(ciphertext), iv.length);
+                        return await this.bufferToBase64(combined.buffer);
+                    } catch (e) { return null; }
+                }
+                async decrypt(base64Str) {
+                    if (!this.key || typeof base64Str !== 'string') return base64Str;
+                    try {
+                        const buffer = await this.base64ToBuffer(base64Str);
+                        const combined = new Uint8Array(buffer);
+                        const iv = combined.slice(0, 12); const ciphertext = combined.slice(12);
+                        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, this.key, ciphertext);
+                        return JSON.parse(new TextDecoder().decode(decrypted));
+                    } catch (e) { return null; }
+                }
             }
-            bufferToBase64(buffer) {
-                return new Promise((resolve) => {
-                    const blob = new Blob([buffer]); const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result.split(',')[1]); reader.readAsDataURL(blob);
-                });
+
+            class DBManager {
+                constructor(crypto) { this.dbName = 'EncryptedNotesDB'; this.dbVersion = 1; this.db = null; this.crypto = crypto; }
+                open() {
+                    return new Promise((resolve, reject) => {
+                        const req = indexedDB.open(this.dbName, this.dbVersion);
+                        req.onupgradeneeded = e => {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains('notes')) {
+                                const store = db.createObjectStore('notes', { keyPath: 'id' });
+                                store.createIndex('category', 'category', { unique: false });
+                            }
+                            if (!db.objectStoreNames.contains('categories')) db.createObjectStore('categories', { keyPath: 'id' });
+                            if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+                        };
+                        req.onsuccess = e => { this.db = e.target.result; resolve(); };
+                        req.onerror = e => reject(e.target.error);
+                    });
+                }
+                _tx(store, mode = 'readonly') { return this.db.transaction(store, mode).objectStore(store); }
+                getSetting(key) { return new Promise(res => { const r = this._tx('settings').get(key); r.onsuccess = () => res(r.result?.value); r.onerror = () => res(null); }); }
+                setSetting(key, value) { return new Promise(res => { this._tx('settings', 'readwrite').put({ key, value }); res(); }); }
+                async saveNote(note) {
+                    const noteToSave = { ...note };
+                    if (noteToSave.content) { noteToSave.encryptedContent = await this.crypto.encrypt(noteToSave.content); delete noteToSave.content; }
+                    return new Promise((resolve, reject) => { const req = this._tx('notes', 'readwrite').put(noteToSave); req.onsuccess = () => resolve(noteToSave); req.onerror = () => reject(req.error); });
+                }
+                async getNote(id) { return new Promise((resolve, reject) => { const req = this._tx('notes').get(id); req.onsuccess = async () => { const note = req.result; if (note && note.encryptedContent) { note.content = await this.crypto.decrypt(note.encryptedContent); } resolve(note); }; req.onerror = () => reject(req.error); }); }
+                async getAllNotes() {
+                    return new Promise((resolve, reject) => {
+                        const req = this._tx('notes').getAll();
+                        req.onsuccess = async () => {
+                            const notes = req.result;
+                            for (let note of notes) { if (note.encryptedContent) { note.content = await this.crypto.decrypt(note.encryptedContent); } }
+                            notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                            resolve(notes);
+                        };
+                        req.onerror = () => reject(req.error);
+                    });
+                }
+                async deleteNote(id) { return new Promise(res => { this._tx('notes', 'readwrite').delete(id); res(); }); }
+                async clearAll() { return new Promise(res => { this._tx('notes', 'readwrite').clear(); this._tx('categories', 'readwrite').clear(); this._tx('settings', 'readwrite').clear(); res(); }); }
+                getAllCategories() {
+                    return new Promise(async (res) => {
+                        const r = this._tx('categories').getAll();
+                        r.onsuccess = async () => {
+                            let cats = r.result || [];
+                            let needUpdate = false;
+                            cats.forEach((c, i) => {
+                                if (c.order === undefined) { c.order = i; needUpdate = true; }
+                            });
+                            if (needUpdate) {
+                                for (let c of cats) await this.saveCategory(c);
+                            }
+                            cats.sort((a, b) => (a.order || 0) - (b.order || 0));
+                            res(cats);
+                        };
+                        r.onerror = () => res([]);
+                    });
+                }
+                saveCategory(cat) { return new Promise((resolve, reject) => { const req = this._tx('categories', 'readwrite').put(cat); req.onsuccess = () => resolve(cat); req.onerror = () => reject(req.error); }); }
+                deleteCategory(id) { return new Promise(res => { this._tx('categories', 'readwrite').delete(id); res(); }); }
             }
-            async base64ToBuffer(base64) {
-                const response = await fetch(`data:application/octet-stream;base64,${base64}`);
-                return await response.arrayBuffer();
+
+            // 工具函数（供降级使用）
+            function extractText(json) { if (!json || typeof json !== 'object') return ''; let text = ''; const stack = [json]; while (stack.length > 0) { const node = stack.pop(); if (!node) continue; if (node.type === 'text' && node.text) { text += node.text + ' '; } if (Array.isArray(node.content)) { for (let i = node.content.length - 1; i >= 0; i--) { stack.push(node.content[i]); } } } return text.trim(); }
+            function convertPlainToJSON(text) { const trimmed = (text || '').trim(); return { type: 'doc', content: [{ type: 'paragraph', content: trimmed ? [{ type: 'text', text: trimmed }] : [] }] }; }
+            function formatDate(d) { const date = new Date(d); const now = new Date(); const diff = (now - date) / 60000; if (diff < 1) return '刚刚'; if (diff < 60) return `${Math.floor(diff)}分钟前`; if (diff < 1440) return `${Math.floor(diff / 60)}小时前`; if (diff < 10080) return `${Math.floor(diff / 1440)}天前`; return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }); }
+            function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+            window.SN = {
+                unlocked: false,
+                crypto: new CryptoManager(),
+                db: null,
+                initMainApp: null,
+                appInstance: null,
+                extractText, formatDate, escapeHtml, convertPlainToJSON
+            };
+
+            const lockScreen = document.getElementById('lockScreen');
+            const lockInput = document.getElementById('lockPasswordInput');
+            const lockBtn = document.getElementById('lockSubmitBtn');
+            const lockError = document.getElementById('lockError');
+            const lockTitle = document.getElementById('lockTitle');
+            const lockDesc = document.getElementById('lockDesc');
+
+            async function initLock() {
+                window.SN.db = new DBManager(window.SN.crypto);
+                await window.SN.db.open();
+                const isFirst = await checkFirstTime();
+                if (isFirst) {
+                    lockTitle.innerText = '设置主密码';
+                    lockDesc.innerText = '此密码用于加密您的日记，请牢记。丢失密码将无法恢复数据。';
+                    lockBtn.innerText = '设置并进入';
+                    lockInput.placeholder = '设置主密码 (至少4位)';
+                }
+                const saved = localStorage.getItem('simpleNotesTheme');
+                if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
             }
-            async encrypt(data) {
-                if (!this.key) return data;
+
+            async function checkFirstTime() { const salt = await window.SN.db.getSetting('salt'); return !salt; }
+
+            // ===== 核心修复：使用最稳健的密码验证（解密第一条笔记） =====
+            lockBtn.addEventListener('click', async () => {
+                const password = lockInput.value;
+                if (!password || password.length < 4) {
+                    lockError.textContent = '密码至少4位';
+                    lockError.style.display = 'block';
+                    return;
+                }
+                lockError.style.display = 'none';
+                lockBtn.disabled = true;
+                lockBtn.textContent = '验证中...';
+
                 try {
-                    const iv = crypto.getRandomValues(new Uint8Array(12));
-                    const encoded = new TextEncoder().encode(JSON.stringify(data));
-                    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.key, encoded);
-                    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-                    combined.set(iv, 0); combined.set(new Uint8Array(ciphertext), iv.length);
-                    return await this.bufferToBase64(combined.buffer);
-                } catch (e) { return null; }
-            }
-            async decrypt(base64Str) {
-                if (!this.key || typeof base64Str !== 'string') return base64Str;
-                try {
-                    const buffer = await this.base64ToBuffer(base64Str);
-                    const combined = new Uint8Array(buffer);
-                    const iv = combined.slice(0, 12); const ciphertext = combined.slice(12);
-                    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, this.key, ciphertext);
-                    return JSON.parse(new TextDecoder().decode(decrypted));
-                } catch (e) { return null; }
-            }
-        }
+                    const saltStr = await window.SN.db.getSetting('salt');
+                    if (!saltStr) {
+                        // 首次设置
+                        const salt = crypto.getRandomValues(new Uint8Array(16));
+                        await window.SN.crypto.deriveKey(password, salt);
+                        await window.SN.db.setSetting('salt', btoa(String.fromCharCode(...salt)));
+                        // 为了兼容，可生成 authCheck 但不用于验证
+                        const authCheck = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
+                        if (authCheck) await window.SN.db.setSetting('authCheck', authCheck);
+                        await initDefaultData();
+                        await enterApp();
+                    } else {
+                        const salt = Uint8Array.from(atob(saltStr), c => c.charCodeAt(0));
+                        await window.SN.crypto.deriveKey(password, salt);
 
-        class DBManager {
-            constructor(crypto) { this.dbName = 'EncryptedNotesDB'; this.dbVersion = 1; this.db = null; this.crypto = crypto; }
-            open() {
-                return new Promise((resolve, reject) => {
-                    const req = indexedDB.open(this.dbName, this.dbVersion);
-                    req.onupgradeneeded = e => {
-                        const db = e.target.result;
-                        if (!db.objectStoreNames.contains('notes')) {
-                            const store = db.createObjectStore('notes', { keyPath: 'id' });
-                            store.createIndex('category', 'category', { unique: false });
-                        }
-                        if (!db.objectStoreNames.contains('categories')) db.createObjectStore('categories', { keyPath: 'id' });
-                        if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
-                    };
-                    req.onsuccess = e => { this.db = e.target.result; resolve(); };
-                    req.onerror = e => reject(e.target.error);
-                });
-            }
-            _tx(store, mode = 'readonly') { return this.db.transaction(store, mode).objectStore(store); }
-            getSetting(key) { return new Promise(res => { const r = this._tx('settings').get(key); r.onsuccess = () => res(r.result?.value); r.onerror = () => res(null); }); }
-            setSetting(key, value) { return new Promise(res => { this._tx('settings', 'readwrite').put({ key, value }); res(); }); }
-            async saveNote(note) {
-                const noteToSave = { ...note };
-                if (noteToSave.content) { noteToSave.encryptedContent = await this.crypto.encrypt(noteToSave.content); delete noteToSave.content; }
-                return new Promise((resolve, reject) => { const req = this._tx('notes', 'readwrite').put(noteToSave); req.onsuccess = () => resolve(noteToSave); req.onerror = () => reject(req.error); });
-            }
-            async getNote(id) { return new Promise((resolve, reject) => { const req = this._tx('notes').get(id); req.onsuccess = async () => { const note = req.result; if (note && note.encryptedContent) { note.content = await this.crypto.decrypt(note.encryptedContent); } resolve(note); }; req.onerror = () => reject(req.error); }); }
-            async getAllNotes() {
-                return new Promise((resolve, reject) => {
-                    const req = this._tx('notes').getAll();
-                    req.onsuccess = async () => {
-                        const notes = req.result;
-                        for (let note of notes) { if (note.encryptedContent) { note.content = await this.crypto.decrypt(note.encryptedContent); } }
-                        notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-                        resolve(notes);
-                    };
-                    req.onerror = () => reject(req.error);
-                });
-            }
-            async deleteNote(id) { return new Promise(res => { this._tx('notes', 'readwrite').delete(id); res(); }); }
-            async clearAll() { return new Promise(res => { this._tx('notes', 'readwrite').clear(); this._tx('categories', 'readwrite').clear(); this._tx('settings', 'readwrite').clear(); res(); }); }
-            getAllCategories() { return new Promise(async (res) => { const r = this._tx('categories').getAll(); r.onsuccess = async () => { let cats = r.result || []; let needUpdate = false; cats.forEach((c, i) => { if (c.order === undefined) { c.order = i; needUpdate = true; } }); if (needUpdate) { for (let c of cats) await this.saveCategory(c); } cats.sort((a, b) => (a.order || 0) - (b.order || 0)); res(cats); }; r.onerror = () => res([]); }); }
-            saveCategory(cat) { return new Promise((resolve, reject) => { const req = this._tx('categories', 'readwrite').put(cat); req.onsuccess = () => resolve(cat); req.onerror = () => reject(req.error); }); }
-            deleteCategory(id) { return new Promise(res => { this._tx('categories', 'readwrite').delete(id); res(); }); }
-        }
-
-        // 工具函数
-        function extractText(json) { if (!json || typeof json !== 'object') return ''; let text = ''; const stack = [json]; while (stack.length > 0) { const node = stack.pop(); if (!node) continue; if (node.type === 'text' && node.text) { text += node.text + ' '; } if (Array.isArray(node.content)) { for (let i = node.content.length - 1; i >= 0; i--) { stack.push(node.content[i]); } } } return text.trim(); }
-        function convertPlainToJSON(text) { const trimmed = (text || '').trim(); return { type: 'doc', content: [{ type: 'paragraph', content: trimmed ? [{ type: 'text', text: trimmed }] : [] }] }; }
-        function formatDate(d) { const date = new Date(d); const now = new Date(); const diff = (now - date) / 60000; if (diff < 1) return '刚刚'; if (diff < 60) return `${Math.floor(diff)}分钟前`; if (diff < 1440) return `${Math.floor(diff / 60)}小时前`; if (diff < 10080) return `${Math.floor(diff / 1440)}天前`; return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }); }
-        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-
-        // 全局命名空间
-        window.SN = {
-            unlocked: false,
-            crypto: new CryptoManager(),
-            db: null,
-            initMainApp: null,
-            appInstance: null,
-            extractText, formatDate, escapeHtml, convertPlainToJSON
-        };
-
-        const lockScreen = document.getElementById('lockScreen');
-        const lockInput = document.getElementById('lockPasswordInput');
-        const lockBtn = document.getElementById('lockSubmitBtn');
-        const lockError = document.getElementById('lockError');
-        const lockTitle = document.getElementById('lockTitle');
-        const lockDesc = document.getElementById('lockDesc');
-
-        async function initLock() {
-            window.SN.db = new DBManager(window.SN.crypto);
-            await window.SN.db.open();
-            const isFirst = await checkFirstTime();
-            if (isFirst) {
-                lockTitle.innerText = '设置主密码';
-                lockDesc.innerText = '此密码用于加密您的日记，请牢记。丢失密码将无法恢复数据。';
-                lockBtn.innerText = '设置并进入';
-                lockInput.placeholder = '设置主密码 (至少4位)';
-            }
-            const saved = localStorage.getItem('simpleNotesTheme');
-            if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-        }
-
-        async function checkFirstTime() { const salt = await window.SN.db.getSetting('salt'); return !salt; }
-
-        // ===== 核心修复：稳健的密码验证 =====
-        lockBtn.addEventListener('click', async () => {
-            const password = lockInput.value;
-            if (!password || password.length < 4) {
-                lockError.textContent = '密码至少4位';
-                lockError.style.display = 'block';
-                return;
-            }
-            lockError.style.display = 'none';
-            lockBtn.disabled = true;
-            lockBtn.textContent = '验证中...';
-
-            try {
-                const saltStr = await window.SN.db.getSetting('salt');
-                if (!saltStr) {
-                    // 首次设置
-                    const salt = crypto.getRandomValues(new Uint8Array(16));
-                    await window.SN.crypto.deriveKey(password, salt);
-                    await window.SN.db.setSetting('salt', btoa(String.fromCharCode(...salt)));
-                    const authCheck = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                    await window.SN.db.setSetting('authCheck', authCheck);
-                    await initDefaultData();
-                    await enterApp();
-                } else {
-                    const salt = Uint8Array.from(atob(saltStr), c => c.charCodeAt(0));
-                    await window.SN.crypto.deriveKey(password, salt);
-
-                    let valid = false;
-
-                    // 1. 尝试使用 authCheck 验证（快速路径）
-                    const authCheck = await window.SN.db.getSetting('authCheck');
-                    if (authCheck) {
-                        const dec = await window.SN.crypto.decrypt(authCheck);
-                        if (dec === "AUTH_CHECK_SUCCESS") valid = true;
-                    }
-
-                    // 2. 如果 authCheck 验证失败或不存在，降级到第一条笔记解密（兼容旧版）
-                    if (!valid) {
+                        let valid = false;
+                        // 尝试解密第一条笔记（最可靠）
                         const notes = await window.SN.db.getAllNotes();
                         if (notes.length > 0 && notes[0].encryptedContent) {
                             const test = await window.SN.crypto.decrypt(notes[0].encryptedContent);
                             if (test !== null) valid = true;
                         } else if (notes.length === 0) {
-                            // 数据库为空，视为有效（新用户）
-                            valid = true;
+                            valid = true; // 空数据库
                         }
-                    }
 
-                    // 3. 如果验证通过，确保 authCheck 有效（补写或修复）
-                    if (valid) {
-                        // 如果 authCheck 不存在或无效，生成新的
-                        if (!authCheck) {
-                            const newAuth = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                            if (newAuth) {
-                                await window.SN.db.setSetting('authCheck', newAuth);
-                            }
-                        } else {
-                            // 验证是否与存储的一致
-                            const dec = await window.SN.crypto.decrypt(authCheck);
-                            if (dec !== "AUTH_CHECK_SUCCESS") {
-                                const newAuth = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                                if (newAuth) {
-                                    await window.SN.db.setSetting('authCheck', newAuth);
-                                }
-                            }
+                        if (!valid) {
+                            lockError.textContent = '密码错误，请重试';
+                            lockError.style.display = 'block';
+                            lockBtn.disabled = false;
+                            lockBtn.textContent = '解锁';
+                            lockInput.value = '';
+                            lockInput.focus();
+                            window.SN.crypto.key = null;
+                            return;
                         }
                         await enterApp();
-                    } else {
-                        // 验证失败
-                        lockError.textContent = '密码错误，请重试';
-                        lockError.style.display = 'block';
-                        lockBtn.disabled = false;
-                        lockBtn.textContent = '解锁';
-                        lockInput.value = '';
-                        lockInput.focus();
-                        window.SN.crypto.key = null;
                     }
+                } catch (e) {
+                    lockError.textContent = '验证失败，请重试';
+                    lockError.style.display = 'block';
+                    lockBtn.disabled = false;
+                    lockBtn.textContent = '重试';
+                    console.error(e);
                 }
-            } catch (e) {
-                lockError.textContent = '验证失败，请重试';
-                lockError.style.display = 'block';
-                lockBtn.disabled = false;
-                lockBtn.textContent = '重试';
-                console.error(e);
+            });
+
+            lockInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') lockBtn.click(); });
+
+            async function initDefaultData() {
+                const cats = [
+                    { id: 'daily', name: '小可爱', color: '#5D5CDE', order: 0 },
+                    { id: 'work', name: '阅读', color: '#FF9500', order: 1 },
+                    { id: 'ideas', name: '随记', color: '#34C759', order: 2 },
+                    { id: 'memories', name: '计划', color: '#FF69B4', order: 3 },
+                    { id: 'other', name: '工作', color: '#9E9E9E', order: 4 }
+                ];
+                for (let cat of cats) await window.SN.db.saveCategory(cat);
             }
-        });
 
-        lockInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') lockBtn.click(); });
-
-        async function initDefaultData() {
-            const cats = [
-                { id: 'daily', name: '小可爱', color: '#5D5CDE', order: 0 },
-                { id: 'work', name: '阅读', color: '#FF9500', order: 1 },
-                { id: 'ideas', name: '随记', color: '#34C759', order: 2 },
-                { id: 'memories', name: '计划', color: '#FF69B4', order: 3 },
-                { id: 'other', name: '工作', color: '#9E9E9E', order: 4 }
-            ];
-            for (let cat of cats) await window.SN.db.saveCategory(cat);
-        }
-
-        async function enterApp() {
-            window.SN.unlocked = true;
-            // 隐藏锁屏
-            lockScreen.classList.add('hide');
-            // 如果主应用已加载则初始化，否则降级
-            if (typeof window.SN.initMainApp === 'function') {
-                await window.SN.initMainApp();
-            } else {
-                console.warn('主应用未加载，启用降级模式');
-                await renderNotesFallback();
-            }
-        }
-
-        // 降级渲染
-        async function renderNotesFallback() {
-            try {
-                let notes = await window.SN.db.getAllNotes();
-                const notesList = document.getElementById('notesList');
-                notesList.innerHTML = '';
-                const banner = document.createElement('div');
-                banner.className = 'offline-banner';
-                banner.innerText = '离线模式：主程序未加载，暂不支持编辑。请连接网络后重试。';
-                notesList.appendChild(banner);
-                if (notes.length === 0) {
-                    notesList.innerHTML += `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
-                    return;
+            async function enterApp() {
+                window.SN.unlocked = true;
+                // 等待主应用初始化完成
+                if (typeof window.SN.initMainApp === 'function') {
+                    await window.SN.initMainApp();
+                } else {
+                    // 降级显示
+                    await renderNotesFallback();
                 }
-                const categories = await window.SN.db.getAllCategories();
-                const categoryMap = {};
-                categories.forEach(c => { categoryMap[c.id] = c.name; });
-                notes.forEach(n => {
-                    const div = document.createElement('div');
-                    div.className = 'note-item';
-                    const preview = window.SN.extractText(n.content).substring(0, 100);
-                    const categoryName = categoryMap[n.category] || '未分类';
-                    div.innerHTML = `
-                        <div class="note-title">${window.SN.escapeHtml(n.title || '未命名')}</div>
-                        <div class="note-content-preview">${window.SN.escapeHtml(preview)}</div>
-                        <div class="note-footer">
-                            <span class="note-time">${window.SN.formatDate(n.updatedAt)}</span>
-                            <span class="note-category">${window.SN.escapeHtml(categoryName)}</span>
-                        </div>
-                    `;
-                    div.addEventListener('click', () => alert('离线模式不支持编辑。'));
-                    notesList.appendChild(div);
-                });
-            } catch (e) { console.error(e); }
-        }
+                lockScreen.classList.add('hide');
+            }
 
-        initLock();
+            async function renderNotesFallback() {
+                try {
+                    let notes = await window.SN.db.getAllNotes();
+                    const notesList = document.getElementById('notesList');
+                    notesList.innerHTML = '';
+                    const banner = document.createElement('div');
+                    banner.className = 'offline-banner';
+                    banner.innerText = '离线模式：主程序未加载，暂不支持编辑。请连接网络后重试。';
+                    notesList.appendChild(banner);
+                    if (notes.length === 0) {
+                        notesList.innerHTML += `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
+                        return;
+                    }
+                    const categories = await window.SN.db.getAllCategories();
+                    const categoryMap = {};
+                    categories.forEach(c => { categoryMap[c.id] = c.name; });
+                    notes.forEach(n => {
+                        const div = document.createElement('div');
+                        div.className = 'note-item';
+                        const preview = window.SN.extractText(n.content).substring(0, 100);
+                        const categoryName = categoryMap[n.category] || '未分类';
+                        div.innerHTML = `
+                            <div class="note-title">${window.SN.escapeHtml(n.title || '未命名')}</div>
+                            <div class="note-content-preview">${window.SN.escapeHtml(preview)}</div>
+                            <div class="note-footer">
+                                <span class="note-time">${window.SN.formatDate(n.updatedAt)}</span>
+                                <span class="note-category">${window.SN.escapeHtml(categoryName)}</span>
+                            </div>
+                        `;
+                        div.addEventListener('click', () => alert('离线模式不支持编辑。'));
+                        notesList.appendChild(div);
+                    });
+                } catch (e) { console.error(e); }
+            }
+
+            initLock();
+        })();
     </script>
 
-    <!-- ===== importmap ===== -->
     <script type="importmap">
     {
         "imports": {
@@ -532,8 +519,8 @@
     }
     </script>
 
-    <!-- ===== 主应用模块 ===== -->
     <script type="module">
+        // ===== 主应用 =====
         import { Editor, Extension, Mark, mergeAttributes } from '@tiptap/core';
         import StarterKit from '@tiptap/starter-kit';
         import Placeholder from '@tiptap/extension-placeholder';
@@ -584,6 +571,10 @@
                 this.convertPlainToJSON = window.SN.convertPlainToJSON;
 
                 this.initElements();
+                // 强制等待初始化完成
+                (async () => {
+                    await this.init();
+                })();
             }
 
             initElements() {
@@ -643,7 +634,6 @@
                 };
             }
 
-            // 初始化方法，返回 Promise
             async init() {
                 this.bindGlobalEvents();
                 this.bindEditorEvents();
@@ -651,7 +641,6 @@
                 await this.renderCategories();
                 await this.renderNotes();
                 this.initTheme();
-                return this;
             }
 
             setupViewport() {
@@ -911,7 +900,7 @@
             initTheme() { const saved = localStorage.getItem('simpleNotesTheme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; if (saved === 'dark' || (!saved && prefersDark)) { document.documentElement.setAttribute('data-theme', 'dark'); this.els.themeBtn.innerHTML = '<i class="fas fa-sun"></i>'; } else { this.els.themeBtn.innerHTML = '<i class="fas fa-moon"></i>'; } }
         }
 
-        // 初始化接口
+        // 暴露初始化函数
         window.SN.initMainApp = async function() {
             if (window.SN.appInstance) return;
             const app = new App();
