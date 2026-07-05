@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
     <style>
-        /* ===== 样式与之前完全一致，保持所有功能样式 ===== */
+        /* 样式与之前完全一致，省略（保持原有全部样式） */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
         :root{--primary-color:#5D5CDE;--secondary-color:#8A8AFF;--bg-color:#F8F9FA;--card-color:#FFFFFF;--text-primary:#333333;--text-secondary:#777777;--border-color:#E0E0E0;--shadow:0 2px 12px rgba(0,0,0,0.06);--radius:12px;--radius-sm:8px;--danger-color:#FF3B30;--success-color:#34C759;--toolbar-bg:#f5f5f7;--safe-area-bottom:env(safe-area-inset-bottom);--warning-color:#FF9500}
         [data-theme="dark"]{--bg-color:#121212;--card-color:#1E1E1E;--text-primary:#E0E0E0;--text-secondary:#AAAAAA;--border-color:#333333;--shadow:0 2px 12px rgba(0,0,0,0.3);--toolbar-bg:#2a2a2a}
@@ -226,7 +226,7 @@
         <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
     </div>
 
-    <!-- 模态框（与之前一致，略） -->
+    <!-- 模态框 -->
     <div class="modal-overlay" id="categoryManageModal"><div class="modal"><div class="modal-header"><h3><i class="fas fa-tags"></i> 管理分类</h3><button class="modal-close" id="closeCategoryManageModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><div id="categoryList"></div><div style="display:flex;gap:8px;margin-top:12px;"><input type="text" id="newCategoryName" placeholder="新分类名称" style="flex:1;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"><input type="color" id="newCategoryColor" value="#5D5CDE" style="width:40px;height:40px;border:none;cursor:pointer;"><button class="lock-btn" id="addNewCategoryBtn" style="flex:0 0 auto;background:var(--primary-color);">添加</button></div></div></div></div>
     <div class="modal-overlay" id="customTimestampModal"><div class="modal"><div class="modal-header"><h3>自定义时间戳格式</h3><button class="modal-close" id="closeCustomTimestampModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><div><label>格式字符串:</label><input type="text" id="customFormatInput" value="YYYY年MM月DD日 HH:mm:ss" style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"></div><div style="margin-top:12px;"><label>预览:</label><div id="formatPreview" style="padding:8px;background:rgba(93,92,222,0.05);border-radius:4px;"></div></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH:mm:ss">标准</button><button class="timestamp-btn" data-preset="YYYY年MM月DD日 HH时mm分">中文</button><button class="timestamp-btn" data-preset="DD/MM/YYYY">日期</button><button class="timestamp-btn" data-preset="HH:mm:ss">时间</button></div></div><div class="modal-footer"><button class="modal-btn secondary" id="cancelCustomTimestamp">取消</button><button class="modal-btn primary" id="insertCustomTimestamp">插入</button></div></div></div>
     <div class="modal-overlay" id="importModal"><div class="modal"><div class="modal-header"><h3>导入笔记</h3><button class="modal-close" id="closeImportModal"><i class="fas fa-times"></i></button></div><div class="modal-body"><p>请选择要导入的文件格式：</p><div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;"><button class="lock-btn" id="importJsonBtn2" style="background:var(--primary-color);">导入 JSON 文件</button><button class="lock-btn" id="importTxtBtn" style="background:var(--secondary-color);">导入 Markdown 文件</button></div><p style="font-size:12px;color:var(--text-secondary);margin-top:12px;">注意：导入会添加新笔记，不会删除现有笔记。</p></div></div></div>
@@ -341,7 +341,7 @@
                 deleteCategory(id) { return new Promise(res => { this._tx('categories', 'readwrite').delete(id); res(); }); }
             }
 
-            // 工具函数（供降级使用）
+            // 工具函数
             function extractText(json) { if (!json || typeof json !== 'object') return ''; let text = ''; const stack = [json]; while (stack.length > 0) { const node = stack.pop(); if (!node) continue; if (node.type === 'text' && node.text) { text += node.text + ' '; } if (Array.isArray(node.content)) { for (let i = node.content.length - 1; i >= 0; i--) { stack.push(node.content[i]); } } } return text.trim(); }
             function convertPlainToJSON(text) { const trimmed = (text || '').trim(); return { type: 'doc', content: [{ type: 'paragraph', content: trimmed ? [{ type: 'text', text: trimmed }] : [] }] }; }
             function formatDate(d) { const date = new Date(d); const now = new Date(); const diff = (now - date) / 60000; if (diff < 1) return '刚刚'; if (diff < 60) return `${Math.floor(diff)}分钟前`; if (diff < 1440) return `${Math.floor(diff / 60)}小时前`; if (diff < 10080) return `${Math.floor(diff / 1440)}天前`; return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }); }
@@ -379,7 +379,7 @@
 
             async function checkFirstTime() { const salt = await window.SN.db.getSetting('salt'); return !salt; }
 
-            // ===== 核心修复：使用最稳健的密码验证（解密第一条笔记） =====
+            // ===== 密码验证：结合 authCheck + 第一条笔记备用 =====
             lockBtn.addEventListener('click', async () => {
                 const password = lockInput.value;
                 if (!password || password.length < 4) {
@@ -398,9 +398,9 @@
                         const salt = crypto.getRandomValues(new Uint8Array(16));
                         await window.SN.crypto.deriveKey(password, salt);
                         await window.SN.db.setSetting('salt', btoa(String.fromCharCode(...salt)));
-                        // 为了兼容，可生成 authCheck 但不用于验证
+                        // 生成 authCheck
                         const authCheck = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                        if (authCheck) await window.SN.db.setSetting('authCheck', authCheck);
+                        await window.SN.db.setSetting('authCheck', authCheck);
                         await initDefaultData();
                         await enterApp();
                     } else {
@@ -408,13 +408,26 @@
                         await window.SN.crypto.deriveKey(password, salt);
 
                         let valid = false;
-                        // 尝试解密第一条笔记（最可靠）
-                        const notes = await window.SN.db.getAllNotes();
-                        if (notes.length > 0 && notes[0].encryptedContent) {
-                            const test = await window.SN.crypto.decrypt(notes[0].encryptedContent);
-                            if (test !== null) valid = true;
-                        } else if (notes.length === 0) {
-                            valid = true; // 空数据库
+                        // 1. 优先使用 authCheck
+                        const authCheck = await window.SN.db.getSetting('authCheck');
+                        if (authCheck) {
+                            const dec = await window.SN.crypto.decrypt(authCheck);
+                            if (dec === "AUTH_CHECK_SUCCESS") valid = true;
+                        }
+
+                        // 2. 若 authCheck 无效，降级到第一条笔记解密（兼容旧数据）
+                        if (!valid) {
+                            const notes = await window.SN.db.getAllNotes();
+                            if (notes.length > 0 && notes[0].encryptedContent) {
+                                const test = await window.SN.crypto.decrypt(notes[0].encryptedContent);
+                                if (test !== null) valid = true;
+                            } else if (notes.length === 0) {
+                                // 空数据库：允许进入，但后续必须生成 authCheck
+                                valid = true;
+                                // 补写 authCheck
+                                const newAuth = await window.SN.crypto.encrypt("AUTH_CHECK_SUCCESS");
+                                if (newAuth) await window.SN.db.setSetting('authCheck', newAuth);
+                            }
                         }
 
                         if (!valid) {
@@ -453,14 +466,14 @@
 
             async function enterApp() {
                 window.SN.unlocked = true;
-                // 等待主应用初始化完成
+                // 先隐藏锁屏，让用户立即看到界面（后台初始化）
+                lockScreen.classList.add('hide');
+                // 如果主应用已加载则初始化，否则降级
                 if (typeof window.SN.initMainApp === 'function') {
-                    await window.SN.initMainApp();
+                    await window.SN.initMainApp(); // 异步接管，不阻塞界面响应
                 } else {
-                    // 降级显示
                     await renderNotesFallback();
                 }
-                lockScreen.classList.add('hide');
             }
 
             async function renderNotesFallback() {
@@ -571,10 +584,7 @@
                 this.convertPlainToJSON = window.SN.convertPlainToJSON;
 
                 this.initElements();
-                // 强制等待初始化完成
-                (async () => {
-                    await this.init();
-                })();
+                // 注意：不再自动调用 init()，由外部显式调用
             }
 
             initElements() {
@@ -900,9 +910,12 @@
             initTheme() { const saved = localStorage.getItem('simpleNotesTheme'); const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; if (saved === 'dark' || (!saved && prefersDark)) { document.documentElement.setAttribute('data-theme', 'dark'); this.els.themeBtn.innerHTML = '<i class="fas fa-sun"></i>'; } else { this.els.themeBtn.innerHTML = '<i class="fas fa-moon"></i>'; } }
         }
 
-        // 暴露初始化函数
+        // 暴露初始化函数，只调用一次
         window.SN.initMainApp = async function() {
-            if (window.SN.appInstance) return;
+            if (window.SN.appInstance) {
+                // 已初始化，直接返回
+                return window.SN.appInstance;
+            }
             const app = new App();
             await app.init();
             window.SN.appInstance = app;
@@ -911,12 +924,7 @@
 
         // 如果已解锁，立即初始化
         if (window.SN.unlocked) {
-            window.SN.initMainApp().then(() => {
-                const lockScreen = document.getElementById('lockScreen');
-                if (!lockScreen.classList.contains('hide')) {
-                    lockScreen.classList.add('hide');
-                }
-            });
+            window.SN.initMainApp().catch(err => console.error('主应用初始化失败:', err));
         }
     </script>
 </body>
