@@ -26,7 +26,6 @@
         body { background-color: var(--bg-color); color: var(--text-primary); line-height: 1.5; overflow-x: hidden; }
         .container { max-width: 800px; margin: 0 auto; padding: 0 16px; }
 
-        /* 锁屏界面：不透明背景，盖住主界面 */
         .lock-screen {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: var(--bg-color); z-index: 5000;
@@ -170,7 +169,7 @@
         </div>
     </div>
 
-    <!-- 主界面容器（移除了 display:none，避免重排 Bug） -->
+    <!-- 主界面容器（默认可见，由锁屏覆盖） -->
     <div id="appContent">
         <header class="header">
             <div class="container">
@@ -470,43 +469,57 @@
 
         async function enterApp() {
             window.SN.unlocked = true;
-            lockScreen.classList.add('hide'); // 锁屏淡出，主界面自然显示，无需修改 display
-            
+            // 隐藏锁屏
+            lockScreen.classList.add('hide');
+
+            // 如果主应用已加载完成，直接初始化；否则显示降级内容并等待
             if (typeof window.SN.initMainApp === 'function') {
-                window.SN.initMainApp(); // 主应用加载成功，接管界面
+                window.SN.initMainApp(); // 主应用会接管渲染
             } else {
-                console.warn('主应用未加载，启用降级模式');
-                await renderNotesFallback(); // 离线降级：只读模式
+                console.warn('主应用未加载，启用降级只读模式');
+                await renderNotesFallback();
+                // 主应用可能在之后加载，由模块脚本自动接管
             }
         }
 
-        // 降级渲染：仅用纯文本展示笔记
+        // 降级渲染：只读笔记列表
         async function renderNotesFallback() {
-            let notes = await window.SN.db.getAllNotes();
-            notesList.innerHTML = '';
-            const banner = document.createElement('div');
-            banner.className = 'offline-banner';
-            banner.innerText = '离线模式：主程序未加载，暂不支持编辑。请连接网络后重试。';
-            notesList.appendChild(banner);
+            try {
+                let notes = await window.SN.db.getAllNotes();
+                notesList.innerHTML = '';
+                const banner = document.createElement('div');
+                banner.className = 'offline-banner';
+                banner.innerText = '离线模式：主程序未加载，暂不支持编辑。请连接网络后重试。';
+                notesList.appendChild(banner);
 
-            if (notes.length === 0) {
-                notesList.innerHTML += `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
-                return;
+                if (notes.length === 0) {
+                    notesList.innerHTML += `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
+                    return;
+                }
+                const categories = await window.SN.db.getAllCategories();
+                const categoryMap = {};
+                categories.forEach(c => { categoryMap[c.id] = c.name; });
+
+                notes.forEach(n => {
+                    const div = document.createElement('div');
+                    div.className = 'note-item';
+                    const preview = window.SN.extractText(n.content).substring(0, 100);
+                    const categoryName = categoryMap[n.category] || '未分类';
+                    div.innerHTML = `
+                        <div class="note-title">${window.SN.escapeHtml(n.title || '未命名')}</div>
+                        <div class="note-content-preview">${window.SN.escapeHtml(preview)}</div>
+                        <div class="note-footer">
+                            <span class="note-time">${window.SN.formatDate(n.updatedAt)}</span>
+                            <span class="note-category">${window.SN.escapeHtml(categoryName)}</span>
+                        </div>
+                    `;
+                    div.addEventListener('click', () => alert('离线模式不支持编辑。'));
+                    notesList.appendChild(div);
+                });
+            } catch (e) {
+                console.error('降级渲染失败:', e);
+                notesList.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>加载笔记失败，请检查网络或刷新</p></div>`;
             }
-            notes.forEach(n => {
-                const div = document.createElement('div');
-                div.className = 'note-item';
-                const preview = window.SN.extractText(n.content).substring(0, 100);
-                div.innerHTML = `
-                    <div class="note-title">${window.SN.escapeHtml(n.title || '未命名')}</div>
-                    <div class="note-content-preview">${window.SN.escapeHtml(preview)}</div>
-                    <div class="note-footer">
-                        <span class="note-time">${window.SN.formatDate(n.updatedAt)}</span>
-                    </div>
-                `;
-                div.addEventListener('click', () => alert('离线模式不支持编辑。'));
-                notesList.appendChild(div);
-            });
         }
 
         initLock();
@@ -581,7 +594,10 @@
                 this.convertPlainToJSON = window.SN.convertPlainToJSON;
 
                 this.initElements();
-                this.init();
+                // 异步初始化，但确保渲染完成后再结束
+                (async () => {
+                    await this.init();
+                })();
             }
 
             initElements() {
@@ -641,12 +657,17 @@
                 };
             }
 
-            init() {
+            async init() {
                 this.bindGlobalEvents();
                 this.bindEditorEvents();
                 this.setupViewport();
-                this.renderCategories();
-                this.renderNotes(); // 接管降级 UI，重新渲染完整列表
+                try {
+                    await this.renderCategories();
+                    await this.renderNotes();
+                } catch (e) {
+                    console.error('初始化渲染失败:', e);
+                    this.els.notesList.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>加载笔记失败，请刷新重试</p></div>`;
+                }
                 this.initTheme();
             }
 
@@ -718,25 +739,55 @@
                 this.renderCategories(); this.renderNotes();
             }
 
-            async renderNotes() {
-                let notes = await this.db.getAllNotes();
-                if (this.currentFilter !== 'all') notes = notes.filter(n => n.category === this.currentFilter);
-                const search = this.els.searchInput.value.trim().toLowerCase();
-                if (search) { notes = notes.filter(n => { const text = (n.title || '').toLowerCase() + ' ' + (this.extractText(n.content) || '').toLowerCase(); return text.includes(search); }); }
-                this.els.clearSearch.style.display = this.els.searchInput.value.trim() ? 'block' : 'none';
-                this.els.notesList.innerHTML = '';
-                if (notes.length === 0) { this.els.notesList.innerHTML = `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`; return; }
-                const categories = await this.db.getAllCategories();
-                const categoryMap = {}; categories.forEach(c => { categoryMap[c.id] = c.name; });
-                notes.forEach(n => {
-                    const div = document.createElement('div');
-                    div.className = 'note-item';
-                    const preview = this.extractText(n.content).substring(0, 100);
-                    const categoryName = categoryMap[n.category] || '未分类';
-                    div.innerHTML = `<div class="note-title">${this.escapeHtml(n.title || '未命名')}</div><div class="note-content-preview">${this.escapeHtml(preview)}</div><div class="note-footer"><span class="note-time">${this.formatDate(n.updatedAt)}</span><span class="note-category">${this.escapeHtml(categoryName)}</span></div>`;
-                    div.addEventListener('click', () => this.openEditor(n.id));
-                    this.els.notesList.appendChild(div);
-                });
+            async renderNotes(retryCount = 0) {
+                try {
+                    let notes = await this.db.getAllNotes();
+                    if (!notes) notes = [];
+                    if (this.currentFilter !== 'all') {
+                        notes = notes.filter(n => n.category === this.currentFilter);
+                    }
+                    const search = this.els.searchInput.value.trim().toLowerCase();
+                    if (search) {
+                        notes = notes.filter(n => {
+                            const titleText = (n.title || '').toLowerCase();
+                            const contentText = (this.extractText(n.content) || '').toLowerCase();
+                            return titleText.includes(search) || contentText.includes(search);
+                        });
+                    }
+                    this.els.clearSearch.style.display = this.els.searchInput.value.trim() ? 'block' : 'none';
+                    this.els.notesList.innerHTML = '';
+                    if (notes.length === 0) {
+                        this.els.notesList.innerHTML = `<div class="empty-state"><i class="fas fa-book-open"></i><p>暂无笔记</p></div>`;
+                        return;
+                    }
+                    const categories = await this.db.getAllCategories();
+                    const categoryMap = {};
+                    categories.forEach(c => { categoryMap[c.id] = c.name; });
+                    notes.forEach(n => {
+                        const div = document.createElement('div');
+                        div.className = 'note-item';
+                        const preview = this.extractText(n.content).substring(0, 100) || '（无内容）';
+                        const categoryName = categoryMap[n.category] || '未分类';
+                        div.innerHTML = `
+                            <div class="note-title">${this.escapeHtml(n.title || '未命名')}</div>
+                            <div class="note-content-preview">${this.escapeHtml(preview)}</div>
+                            <div class="note-footer">
+                                <span class="note-time">${this.formatDate(n.updatedAt)}</span>
+                                <span class="note-category">${this.escapeHtml(categoryName)}</span>
+                            </div>
+                        `;
+                        div.addEventListener('click', () => this.openEditor(n.id));
+                        this.els.notesList.appendChild(div);
+                    });
+                } catch (err) {
+                    console.error('渲染笔记失败:', err);
+                    if (retryCount < 2) {
+                        console.log(`重试渲染笔记 (${retryCount + 1}/2)`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        return this.renderNotes(retryCount + 1);
+                    }
+                    this.els.notesList.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>加载笔记失败，请检查网络或刷新</p></div>`;
+                }
             }
 
             bindEditorEvents() {
@@ -796,11 +847,11 @@
                     if (!this.editingId) this.editingId = noteData.id;
                     this.els.autoSaveStatus.textContent = '已保存'; this.els.autoSaveStatus.classList.add('show');
                     setTimeout(() => this.els.autoSaveStatus.classList.remove('show'), 1500);
-                    this.renderNotes();
+                    await this.renderNotes();
                 } catch (e) { this.els.autoSaveStatus.textContent = '保存失败'; this.els.autoSaveStatus.classList.add('show'); }
             }
 
-            async deleteNote() { if (!this.editingId) { this.closeEditor(false); return; } if (confirm('确定删除此笔记？')) { await this.db.deleteNote(this.editingId); this.renderNotes(); this.closeEditor(false); } }
+            async deleteNote() { if (!this.editingId) { this.closeEditor(false); return; } if (confirm('确定删除此笔记？')) { await this.db.deleteNote(this.editingId); await this.renderNotes(); this.closeEditor(false); } }
             executeAction(action) { if (!this.editor) return; const chain = this.editor.chain().focus(); const map = { toggleBold: () => chain.toggleBold().run(), toggleItalic: () => chain.toggleItalic().run(), toggleUnderline: () => chain.toggleUnderline().run(), toggleStrike: () => chain.toggleStrike().run(), toggleCode: () => chain.toggleCode().run(), unsetAllMarks: () => chain.unsetAllMarks().run(), 'setHeading-1': () => chain.setHeading({ level: 1 }).run(), 'setHeading-2': () => chain.setHeading({ level: 2 }).run(), 'setHeading-3': () => chain.setHeading({ level: 3 }).run(), setParagraph: () => chain.setParagraph().run(), toggleBulletList: () => chain.toggleBulletList().run(), toggleOrderedList: () => chain.toggleOrderedList().run(), toggleBlockquote: () => chain.toggleBlockquote().run(), toggleCodeBlock: () => chain.toggleCodeBlock().run(), 'setTextAlign-left': () => chain.setTextAlign('left').run(), 'setTextAlign-center': () => chain.setTextAlign('center').run(), 'setTextAlign-right': () => chain.setTextAlign('right').run(), indent: () => chain.indent().run(), outdent: () => chain.outdent().run() }; if (map[action]) map[action](); this.updateToolbarState(); this.triggerAutoSave(); }
             updateToolbarState() { if (!this.editor) return; const editor = this.editor; this.els.toolbar.querySelectorAll('[data-action]').forEach(btn => { const action = btn.dataset.action; let active = false; if (action === 'toggleBold') active = editor.isActive('bold'); else if (action === 'toggleItalic') active = editor.isActive('italic'); else if (action === 'toggleUnderline') active = editor.isActive('underline'); else if (action === 'toggleStrike') active = editor.isActive('strike'); else if (action === 'toggleCode') active = editor.isActive('code'); else if (action.startsWith('setHeading-')) { active = editor.isActive('heading', { level: parseInt(action.split('-')[1]) }); } else if (action === 'setParagraph') active = editor.isActive('paragraph'); else if (action === 'toggleBulletList') active = editor.isActive('bulletList'); else if (action === 'toggleOrderedList') active = editor.isActive('orderedList'); else if (action === 'toggleBlockquote') active = editor.isActive('blockquote'); else if (action === 'toggleCodeBlock') active = editor.isActive('codeBlock'); else if (action.startsWith('setTextAlign-')) { active = editor.isActive({ textAlign: action.split('-')[1] }); } btn.classList.toggle('is-active', active); }); }
             triggerAutoSave() { clearTimeout(this.autoSaveTimer); this.els.autoSaveStatus.textContent = '编辑中...'; this.els.autoSaveStatus.classList.add('show'); this.autoSaveTimer = setTimeout(() => this.saveNote(), this.settings.autoSaveInterval); }
@@ -836,7 +887,7 @@
                 this.els.clearDataBtn.addEventListener('click', () => this.els.clearDataModal.classList.add('active'));
                 this.els.closeClearDataModal.addEventListener('click', () => this.els.clearDataModal.classList.remove('active'));
                 this.els.cancelClearData.addEventListener('click', () => this.els.clearDataModal.classList.remove('active'));
-                this.els.confirmClearData.addEventListener('click', async () => { await this.db.clearAll(); this.els.clearDataModal.classList.remove('active'); this.renderNotes(); this.renderCategories(); });
+                this.els.confirmClearData.addEventListener('click', async () => { await this.db.clearAll(); this.els.clearDataModal.classList.remove('active'); await this.renderNotes(); await this.renderCategories(); });
                 this.els.categories.addEventListener('click', e => { if (e.target.classList.contains('category-btn')) { document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); this.currentFilter = e.target.dataset.id; this.renderNotes(); } });
                 this.els.themeBtn.addEventListener('click', () => this.toggleTheme());
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.els.editorContainer.classList.contains('active')) { this.closeEditor(true); } if ((e.ctrlKey || e.metaKey) && e.key === 's' && this.els.editorContainer.classList.contains('active')) { e.preventDefault(); this.saveNote(true); } });
@@ -856,7 +907,7 @@
                         if (categories.length > 0) { for (const c of categories) await this.db.saveCategory(c); await this.renderCategories(); }
                         let count = 0;
                         for (const note of notes) { let content = note.content; if (typeof content === 'string') content = this.convertPlainToJSON(content); const newNote = { id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' + count, title: note.title || '未命名笔记', content: content || { type: 'doc', content: [{ type: 'paragraph' }] }, category: note.category || 'daily', createdAt: note.createdAt || new Date().toISOString(), updatedAt: note.updatedAt || new Date().toISOString() }; await this.db.saveNote(newNote); count++; }
-                        alert(`成功导入 ${count} 条笔记`); this.renderNotes(); this.renderCategories();
+                        alert(`成功导入 ${count} 条笔记`); await this.renderNotes(); await this.renderCategories();
                     } catch (err) { alert('导入失败: ' + err.message); }
                 }; reader.readAsText(file);
             }
@@ -867,7 +918,7 @@
                     const content = ev.target.result; const lines = content.split('\n'); let currentNote = null, count = 0;
                     for (const line of lines) { if (line.startsWith('## 笔记')) { if (currentNote) { await this.saveCurrentNote(currentNote); count++; } const match = line.match(/## 笔记 \d+: (.+)/); currentNote = { title: match ? match[1] : '未命名笔记', content: '', category: 'daily' }; } else if (currentNote && line.trim() && !line.startsWith('- **')) { currentNote.content += line + '\n'; } }
                     if (currentNote) { await this.saveCurrentNote(currentNote); count++; }
-                    alert(`成功导入 ${count} 条笔记`); this.renderNotes();
+                    alert(`成功导入 ${count} 条笔记`); await this.renderNotes();
                 }; reader.readAsText(file);
             }
 
@@ -883,7 +934,7 @@
             window.SN.appInstance = new App();
         };
 
-        // 如果用户在网络较慢时先解锁了（降级模式），而模块脚本刚刚才加载完，则自动接管
+        // 如果用户已解锁，立即初始化应用
         if (window.SN.unlocked) {
             window.SN.initMainApp();
         }
