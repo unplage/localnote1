@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>素记日记</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
+    <!-- 仅保留字体图标（可本地化） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 全局样式 - 精简保留原有功能样式 */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
         :root{--primary-color:#5D5CDE;--secondary-color:#8A8AFF;--bg-color:#F8F9FA;--card-color:#FFFFFF;--text-primary:#333333;--text-secondary:#777777;--border-color:#E0E0E0;--shadow:0 2px 12px rgba(0,0,0,0.06);--radius:12px;--radius-sm:8px;--danger-color:#FF3B30;--success-color:#34C759;--toolbar-bg:#f5f5f7;--safe-area-bottom:env(safe-area-inset-bottom)}
         [data-theme="dark"]{--bg-color:#121212;--card-color:#1E1E1E;--text-primary:#E0E0E0;--text-secondary:#AAAAAA;--border-color:#333333;--shadow:0 2px 12px rgba(0,0,0,0.3);--toolbar-bg:#2a2a2a}
@@ -37,6 +39,7 @@
         .note-category{font-size:11px;padding:2px 8px;border-radius:10px;background-color:rgba(93,92,222,0.1);color:var(--primary-color)}
         .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary)}
         .empty-state i{font-size:48px;margin-bottom:16px;color:#DDD}
+        /* 编辑器容器 */
         .editor-container{position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--card-color);z-index:1000;transform:translateX(100%);transition:transform 0.3s ease;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain}
         .editor-container.active{transform:translateX(0)}
         .editor-container.swiping{transition:none}
@@ -51,6 +54,7 @@
         .toolbar-toggle-container{text-align:center;margin-bottom:12px}
         .toolbar-toggle-btn{background:transparent;border:1px dashed var(--border-color);color:var(--text-secondary);padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer;transition:all 0.2s}
         .toolbar-toggle-btn:active{background:var(--toolbar-bg);color:var(--primary-color)}
+        /* 富文本工具栏（只对富文本编辑器有效） */
         .editor-toolbar{display:none;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--toolbar-bg);border-radius:var(--radius-sm);margin-bottom:12px;border:1px solid var(--border-color)}
         .toolbar-group{display:flex;gap:2px;padding-right:6px;margin-right:6px;border-right:1px solid var(--border-color)}
         .toolbar-group:last-child{border-right:none;margin-right:0}
@@ -60,7 +64,8 @@
         .color-picker-group label{display:flex;align-items:center;gap:2px;cursor:pointer;font-size:12px;color:var(--text-secondary)}
         .color-picker-group input[type="color"]{width:24px;height:24px;border:none;background:transparent;cursor:pointer;padding:0}
         .editor-toolbar select{padding:4px;border:1px solid var(--border-color);border-radius:4px;font-size:12px;background:var(--card-color);color:var(--text-primary)}
-        #tiptap-editor{flex:1;font-size:16px;line-height:1.6;outline:none;padding-bottom:40px;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+        /* TipTap 挂载点 */
+        #tiptap-editor{flex:1;font-size:16px;line-height:1.6;outline:none;padding-bottom:40px;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:block}
         .ProseMirror{outline:none;min-height:100%}
         .ProseMirror p{margin:0 0 0.5em 0}
         .ProseMirror h1{font-size:1.5em;margin:0.5em 0 0.3em}
@@ -70,6 +75,9 @@
         .ProseMirror code{background:rgba(175,184,193,0.2);border-radius:4px;padding:0.2em 0.4em;font-size:0.9em}
         .ProseMirror pre{background:#f6f8fa;border-radius:6px;padding:1em;margin:0 0 0.5em 0;overflow:auto}
         .ProseMirror img{max-width:100%;height:auto;border-radius:8px}
+        /* 降级文本域 */
+        #plain-editor{display:none;width:100%;height:100%;font-size:16px;line-height:1.6;padding:12px;border:none;resize:none;outline:none;background:transparent;color:var(--text-primary);font-family:inherit}
+        #plain-editor:focus{outline:none}
         .timestamp-toolbar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
         .timestamp-btn{padding:6px 12px;background:rgba(93,92,222,0.1);border:1px solid rgba(93,92,222,0.2);border-radius:var(--radius-sm);color:var(--primary-color);font-size:13px;cursor:pointer}
         .timestamp-btn:hover{background:rgba(93,92,222,0.2)}
@@ -121,10 +129,9 @@
                 <div class="notes-list" id="notesList"></div>
                 <div class="export-section" id="exportSection" style="display:none;">
                     <h3 style="margin-bottom:12px;"><i class="fas fa-file-export"></i> 数据管理</h3>
-                    <button class="lock-btn" id="exportJsonBtn" style="background:var(--text-secondary);">📥 导出 JSON (明文)</button>
+                    <button class="lock-btn" id="exportJsonBtn" style="background:var(--text-secondary);">📥 导出 JSON</button>
                     <button class="lock-btn" id="exportMarkdownBtn" style="background:var(--secondary-color);">📄 导出 Markdown</button>
                     <button class="lock-btn" id="importJsonBtn" style="background:var(--primary-color);">📤 导入 JSON</button>
-                    <button class="lock-btn" id="backupBtn" style="background:var(--success-color);">💾 创建备份</button>
                     <button class="lock-btn" id="clearDataBtn" style="background:var(--danger-color);">🗑️ 清除所有数据</button>
                 </div>
                 <div class="settings-section" id="settingsSection" style="display:none; margin-top:20px; background:var(--card-color); padding:16px; border-radius:var(--radius); box-shadow:var(--shadow);">
@@ -158,6 +165,7 @@
                 <div class="toolbar-toggle-container">
                     <button id="toggleToolbarBtn" class="toolbar-toggle-btn"><i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span></button>
                 </div>
+                <!-- 富文本工具栏 -->
                 <div class="editor-toolbar" id="editorToolbar">
                     <div class="toolbar-group">
                         <button data-action="toggleBold" title="加粗"><i class="fas fa-bold"></i></button>
@@ -201,7 +209,11 @@
                         <button data-action="insertImage" title="插入图片"><i class="fas fa-image"></i></button>
                     </div>
                 </div>
+                <!-- TipTap 挂载点 -->
                 <div id="tiptap-editor"></div>
+                <!-- 降级文本域 -->
+                <textarea id="plain-editor" placeholder="开始记录..."></textarea>
+                <!-- 时间戳工具栏 -->
                 <div class="timestamp-toolbar" id="timestampToolbar" style="display:none;">
                     <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
                     <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
@@ -214,23 +226,7 @@
         <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
     </div>
 
-    <!-- 迁移模态框 -->
-    <div class="modal-overlay" id="migrationModal">
-        <div class="modal">
-            <div class="modal-header"><h3>🔄 数据迁移</h3></div>
-            <div class="modal-body">
-                <p>检测到旧版加密数据，请输入您之前设置的密码以完成迁移。</p>
-                <input type="password" id="migrationPassword" placeholder="旧密码" style="width:100%;padding:10px;margin-top:12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);font-size:16px;">
-                <div id="migrationError" style="color:var(--danger-color);margin-top:8px;display:none;"></div>
-                <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-                    <button class="modal-btn secondary" id="migrationSkipBtn">放弃旧数据</button>
-                    <button class="modal-btn primary" id="migrationConfirmBtn">迁移</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 其他模态框 -->
+    <!-- 模态框（分类管理、自定义时间戳、导入、清除数据） -->
     <div class="modal-overlay" id="categoryManageModal">
         <div class="modal">
             <div class="modal-header"><h3><i class="fas fa-tags"></i> 管理分类</h3><button class="modal-close" id="closeCategoryManageModal"><i class="fas fa-times"></i></button></div>
@@ -269,8 +265,8 @@
             <div class="modal-body">
                 <p>请选择要导入的文件格式：</p>
                 <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
-                    <button class="lock-btn" id="importJsonBtn2" style="background:var(--primary-color);">导入 JSON 文件</button>
-                    <button class="lock-btn" id="importTxtBtn" style="background:var(--secondary-color);">导入 Markdown 文件</button>
+                    <button class="lock-btn" id="importJsonBtn2" style="background:var(--primary-color);">导入 JSON</button>
+                    <button class="lock-btn" id="importTxtBtn" style="background:var(--secondary-color);">导入 Markdown</button>
                 </div>
                 <p style="font-size:12px;color:var(--text-secondary);margin-top:12px;">注意：导入会添加新笔记，不会删除现有笔记。</p>
             </div>
@@ -290,6 +286,7 @@
         </div>
     </div>
 
+    <!-- 主脚本：使用动态 import 加载富文本编辑器，失败则降级 -->
     <script type="importmap">
     {
         "imports": {
@@ -308,168 +305,12 @@
     </script>
 
     <script type="module">
-        // ===== 导入 =====
-        import { Editor, Extension, Mark, mergeAttributes } from '@tiptap/core';
-        import StarterKit from '@tiptap/starter-kit';
-        import Placeholder from '@tiptap/extension-placeholder';
-        import Underline from '@tiptap/extension-underline';
-        import TextStyle from '@tiptap/extension-text-style';
-        import Color from '@tiptap/extension-color';
-        import Highlight from '@tiptap/extension-highlight';
-        import TextAlign from '@tiptap/extension-text-align';
-        import ImageExtension from '@tiptap/extension-image';
-
-        // ===== 自定义扩展 =====
-        const FontSize = Mark.create({
-            name: 'fontSize', addOptions: { types: ['textStyle'] },
-            parseHTML() { return [{ style: 'font-size' }]; },
-            renderHTML({ HTMLAttributes }) { return ['span', mergeAttributes(HTMLAttributes), 0]; },
-            addAttributes() {
-                return {
-                    fontSize: {
-                        default: null,
-                        parseHTML: el => el.style.fontSize || null,
-                        renderHTML: attrs => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {}
-                    }
-                };
-            }
-        });
-
-        const Indent = Extension.create({
-            name: 'indent',
-            addGlobalAttributes() {
-                return [{
-                    types: ['paragraph', 'heading'],
-                    attributes: {
-                        indent: {
-                            default: 0,
-                            parseHTML: el => Math.floor((parseInt(el.style.paddingLeft) || 0) / 20),
-                            renderHTML: attrs => attrs.indent ? { style: `padding-left: ${attrs.indent * 20}px` } : {}
-                        }
-                    }
-                }];
-            },
-            addCommands() {
-                return {
-                    indent: () => ({ state, dispatch }) => {
-                        const { from, to } = state.selection;
-                        let tr = state.tr, changed = false;
-                        state.doc.nodesBetween(from, to, (node, pos) => {
-                            if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) {
-                                const indent = Math.min((node.attrs.indent || 0) + 1, 3);
-                                tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
-                                changed = true;
-                            }
-                        });
-                        if (changed) { dispatch(tr); return true; }
-                        return false;
-                    },
-                    outdent: () => ({ state, dispatch }) => {
-                        const { from, to } = state.selection;
-                        let tr = state.tr, changed = false;
-                        state.doc.nodesBetween(from, to, (node, pos) => {
-                            if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) {
-                                const indent = Math.max((node.attrs.indent || 0) - 1, 0);
-                                tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
-                                changed = true;
-                            }
-                        });
-                        if (changed) { dispatch(tr); return true; }
-                        return false;
-                    }
-                };
-            }
-        });
-
-        // ===== 加密管理器 =====
-        class CryptoManager {
-            constructor() { this.key = null; }
-
-            async generateNewKey() {
-                this.key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-                return this.key;
-            }
-
-            async saveKey(db) {
-                const jwk = await crypto.subtle.exportKey('jwk', this.key);
-                await db.setSetting('cryptoKey', JSON.stringify(jwk));
-            }
-
-            async loadKey(db) {
-                let keyData = await db.getSetting('cryptoKey');
-                if (keyData) {
-                    try {
-                        this.key = await crypto.subtle.importKey('jwk', JSON.parse(keyData), { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-                        return true;
-                    } catch (e) {
-                        console.warn('密钥导入失败', e);
-                        return false;
-                    }
-                }
-                return false;
-            }
-
-            async deriveOldKey(password, salt) {
-                const enc = new TextEncoder();
-                const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
-                return await crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-                    keyMaterial,
-                    { name: 'AES-GCM', length: 256 },
-                    true,
-                    ['encrypt', 'decrypt']
-                );
-            }
-
-            async encrypt(data) {
-                if (!this.key) return data;
-                try {
-                    const iv = crypto.getRandomValues(new Uint8Array(12));
-                    const encoded = new TextEncoder().encode(JSON.stringify(data));
-                    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.key, encoded);
-                    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-                    combined.set(iv, 0);
-                    combined.set(new Uint8Array(ciphertext), iv.length);
-                    let binary = '';
-                    for (let i = 0; i < combined.length; i++) binary += String.fromCharCode(combined[i]);
-                    return btoa(binary);
-                } catch (e) { console.error('加密失败:', e); return null; }
-            }
-
-            async decrypt(base64Str) {
-                if (!this.key || typeof base64Str !== 'string') return base64Str;
-                try {
-                    const binary = atob(base64Str);
-                    const combined = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) combined[i] = binary.charCodeAt(i);
-                    const iv = combined.slice(0, 12);
-                    const ciphertext = combined.slice(12);
-                    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, this.key, ciphertext);
-                    return JSON.parse(new TextDecoder().decode(decrypted));
-                } catch (e) { console.error('解密失败:', e); return null; }
-            }
-
-            async decryptWithKey(base64Str, key) {
-                if (!key || typeof base64Str !== 'string') return base64Str;
-                try {
-                    const binary = atob(base64Str);
-                    const combined = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) combined[i] = binary.charCodeAt(i);
-                    const iv = combined.slice(0, 12);
-                    const ciphertext = combined.slice(12);
-                    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
-                    return JSON.parse(new TextDecoder().decode(decrypted));
-                } catch (e) { return null; }
-            }
-        }
-
-        // ===== 数据库管理器 =====
+        // ===== 核心：IndexedDB 明文存储 =====
         class DBManager {
-            constructor(crypto) {
-                this.dbName = 'EncryptedNotesDB';
+            constructor() {
+                this.dbName = 'SimpleNotesDB';
                 this.dbVersion = 1;
                 this.db = null;
-                this.crypto = crypto;
             }
             open() {
                 return new Promise((resolve, reject) => {
@@ -504,15 +345,11 @@
                 });
             }
 
+            // 直接存储明文，无加密
             async saveNote(note) {
-                const noteToSave = { ...note };
-                if (noteToSave.content) {
-                    noteToSave.encryptedContent = await this.crypto.encrypt(noteToSave.content);
-                    delete noteToSave.content;
-                }
                 return new Promise((resolve, reject) => {
-                    const req = this._tx('notes', 'readwrite').put(noteToSave);
-                    req.onsuccess = () => resolve(noteToSave);
+                    const req = this._tx('notes', 'readwrite').put(note);
+                    req.onsuccess = () => resolve(note);
                     req.onerror = () => reject(req.error);
                 });
             }
@@ -520,16 +357,7 @@
             async getNote(id) {
                 return new Promise((resolve, reject) => {
                     const req = this._tx('notes').get(id);
-                    req.onsuccess = async () => {
-                        const note = req.result;
-                        if (note && note.encryptedContent) {
-                            note.content = await this.crypto.decrypt(note.encryptedContent);
-                            if (!note.content) {
-                                note.content = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '[解密失败]' }] }] };
-                            }
-                        }
-                        resolve(note);
-                    };
+                    req.onsuccess = () => resolve(req.result);
                     req.onerror = () => reject(req.error);
                 });
             }
@@ -537,19 +365,8 @@
             async getAllNotes() {
                 return new Promise((resolve, reject) => {
                     const req = this._tx('notes').getAll();
-                    req.onsuccess = async () => {
-                        const notes = req.result;
-                        for (let note of notes) {
-                            if (note.encryptedContent) {
-                                const decrypted = await this.crypto.decrypt(note.encryptedContent);
-                                if (decrypted) {
-                                    note.content = decrypted;
-                                } else {
-                                    note.content = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '[解密失败]' }] }] };
-                                }
-                            }
-                        }
-                        notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                    req.onsuccess = () => {
+                        const notes = req.result.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
                         resolve(notes);
                     };
                     req.onerror = () => reject(req.error);
@@ -579,10 +396,7 @@
                         let cats = r.result || [];
                         let needUpdate = false;
                         cats.forEach((c, i) => {
-                            if (c.order === undefined) {
-                                c.order = i;
-                                needUpdate = true;
-                            }
+                            if (c.order === undefined) { c.order = i; needUpdate = true; }
                         });
                         if (needUpdate) {
                             for (let c of cats) await this.saveCategory(c);
@@ -652,12 +466,10 @@
             div.textContent = text;
             return div.innerHTML;
         }
+        // 图片压缩（可选）
         function compressImage(file, maxWidth = 1200, quality = 0.8) {
             return new Promise((resolve) => {
-                if (!file.type.startsWith('image/') || file.size < 512 * 1024) {
-                    resolve(file);
-                    return;
-                }
+                if (!file.type.startsWith('image/') || file.size < 512 * 1024) { resolve(file); return; }
                 const url = URL.createObjectURL(file);
                 const img = new window.Image();
                 img.onload = () => {
@@ -666,67 +478,32 @@
                         const canvas = document.createElement('canvas');
                         let w = img.width, h = img.height;
                         if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
-                        canvas.width = w;
-                        canvas.height = h;
+                        canvas.width = w; canvas.height = h;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, w, h);
                         canvas.toBlob((blob) => {
                             if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
                             else resolve(file);
                         }, 'image/jpeg', quality);
-                    } catch (e) {
-                        console.error('[图片] Canvas 压缩失败:', e);
-                        resolve(file);
-                    }
+                    } catch (e) { resolve(file); }
                 };
-                img.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    console.error('[图片] 加载失败，降级使用原图');
-                    resolve(file);
-                };
+                img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
                 img.src = url;
             });
         }
 
-        // ===== 迁移函数 =====
-        async function performMigration(db, crypto, password) {
-            const saltStr = await db.getSetting('salt');
-            if (!saltStr) return false;
-            const salt = Uint8Array.from(atob(saltStr), c => c.charCodeAt(0));
-            const oldKey = await crypto.deriveOldKey(password, salt);
-            if (!oldKey) return false;
-
-            const notes = await db.getAllNotes();
-            let migratedCount = 0;
-            for (let note of notes) {
-                if (note.encryptedContent) {
-                    const decrypted = await crypto.decryptWithKey(note.encryptedContent, oldKey);
-                    if (decrypted !== null) {
-                        note.content = decrypted;
-                        await db.saveNote(note);
-                        migratedCount++;
-                    } else {
-                        return false; // 密码错误或数据损坏
-                    }
-                }
-            }
-            // 迁移成功，清除旧版字段
-            await db.setSetting('salt', null);
-            await db.setSetting('authCheck', null);
-            return true;
-        }
-
-        // ===== App 类 =====
+        // ===== 应用主类 =====
         class App {
             constructor() {
-                this.crypto = new CryptoManager();
-                this.db = new DBManager(this.crypto);
+                this.db = new DBManager();
                 this.editor = null;
                 this.currentFilter = 'all';
                 this.editingId = null;
                 this.autoSaveTimer = null;
                 this.lastSavedContent = '';
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
+                this.useRichEditor = false;  // 标记是否使用富文本
+                this.editorFallback = false; // 是否降级
 
                 this.initElements();
                 this.init();
@@ -750,8 +527,8 @@
                     toggleToolbarText: document.getElementById('toggleToolbarText'),
                     addButton: document.getElementById('addButton'),
                     closeEditor: document.getElementById('closeEditor'),
-                    saveNote: document.getElementById('saveNote'),
-                    deleteNote: document.getElementById('deleteNote'),
+                    saveNoteBtn: document.getElementById('saveNote'),
+                    deleteNoteBtn: document.getElementById('deleteNote'),
                     timestampBtn: document.getElementById('timestampBtn'),
                     timestampToolbar: document.getElementById('timestampToolbar'),
                     searchBtn: document.getElementById('searchBtn'),
@@ -761,7 +538,6 @@
                     exportJsonBtn: document.getElementById('exportJsonBtn'),
                     exportMarkdownBtn: document.getElementById('exportMarkdownBtn'),
                     importJsonBtn: document.getElementById('importJsonBtn'),
-                    backupBtn: document.getElementById('backupBtn'),
                     clearDataBtn: document.getElementById('clearDataBtn'),
                     autoSaveIntervalInput: document.getElementById('autoSaveIntervalInput'),
                     autoSaveShowStatus: document.getElementById('autoSaveShowStatus'),
@@ -788,45 +564,13 @@
                     closeClearDataModal: document.getElementById('closeClearDataModal'),
                     cancelClearData: document.getElementById('cancelClearData'),
                     confirmClearData: document.getElementById('confirmClearData'),
-                    migrationModal: document.getElementById('migrationModal'),
-                    migrationPassword: document.getElementById('migrationPassword'),
-                    migrationError: document.getElementById('migrationError'),
-                    migrationConfirmBtn: document.getElementById('migrationConfirmBtn'),
-                    migrationSkipBtn: document.getElementById('migrationSkipBtn'),
+                    tiptapEditor: document.getElementById('tiptap-editor'),
+                    plainEditor: document.getElementById('plain-editor'),
                 };
             }
 
             async init() {
                 await this.db.open();
-
-                // 检查旧版数据
-                const salt = await this.db.getSetting('salt');
-                const hasCryptoKey = await this.db.getSetting('cryptoKey');
-
-                if (salt && !hasCryptoKey) {
-                    // 需要迁移
-                    const migrated = await this.showMigrationDialog();
-                    if (migrated) {
-                        // 迁移成功，已有新密钥
-                        console.log('迁移完成');
-                    } else {
-                        // 用户放弃，清除旧数据并生成新密钥
-                        await this.db.setSetting('salt', null);
-                        await this.db.setSetting('authCheck', null);
-                        await this.crypto.generateNewKey();
-                        await this.crypto.saveKey(this.db);
-                        console.log('已放弃旧数据');
-                    }
-                } else if (!hasCryptoKey) {
-                    // 全新安装
-                    await this.crypto.generateNewKey();
-                    await this.crypto.saveKey(this.db);
-                } else {
-                    // 加载已有密钥
-                    await this.crypto.loadKey(this.db);
-                }
-
-                // 初始化界面
                 this.bindGlobalEvents();
                 this.bindEditorEvents();
                 this.setupViewport();
@@ -834,73 +578,162 @@
                 await this.renderNotes();
                 this.loadSettingsToUI();
                 this.initTheme();
+
+                // 尝试加载富文本编辑器
+                await this.loadRichEditor();
                 console.log('应用初始化完成');
             }
 
-            showMigrationDialog() {
-                return new Promise((resolve) => {
-                    const modal = this.els.migrationModal;
-                    modal.classList.add('active');
-                    const passwordInput = this.els.migrationPassword;
-                    const errorDiv = this.els.migrationError;
-                    const confirmBtn = this.els.migrationConfirmBtn;
-                    const skipBtn = this.els.migrationSkipBtn;
+            // 动态加载 TipTap，失败则降级
+            async loadRichEditor() {
+                try {
+                    // 动态导入
+                    const { Editor, Extension, Mark, mergeAttributes } = await import('@tiptap/core');
+                    const StarterKit = (await import('@tiptap/starter-kit')).default;
+                    const Placeholder = (await import('@tiptap/extension-placeholder')).default;
+                    const Underline = (await import('@tiptap/extension-underline')).default;
+                    const TextStyle = (await import('@tiptap/extension-text-style')).default;
+                    const Color = (await import('@tiptap/extension-color')).default;
+                    const Highlight = (await import('@tiptap/extension-highlight')).default;
+                    const TextAlign = (await import('@tiptap/extension-text-align')).default;
+                    const ImageExtension = (await import('@tiptap/extension-image')).default;
 
-                    passwordInput.value = '';
-                    errorDiv.style.display = 'none';
-                    confirmBtn.disabled = false;
-                    confirmBtn.textContent = '迁移';
-
-                    const cleanup = () => {
-                        modal.classList.remove('active');
-                    };
-
-                    const doMigration = async () => {
-                        const password = passwordInput.value;
-                        if (!password) {
-                            errorDiv.textContent = '请输入密码';
-                            errorDiv.style.display = 'block';
-                            return;
+                    // 自定义扩展（FontSize, Indent）
+                    const FontSize = Mark.create({
+                        name: 'fontSize', addOptions: { types: ['textStyle'] },
+                        parseHTML() { return [{ style: 'font-size' }]; },
+                        renderHTML({ HTMLAttributes }) { return ['span', mergeAttributes(HTMLAttributes), 0]; },
+                        addAttributes() {
+                            return {
+                                fontSize: {
+                                    default: null,
+                                    parseHTML: el => el.style.fontSize || null,
+                                    renderHTML: attrs => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {}
+                                }
+                            };
                         }
-                        errorDiv.style.display = 'none';
-                        confirmBtn.disabled = true;
-                        confirmBtn.textContent = '迁移中...';
+                    });
 
-                        try {
-                            const success = await performMigration(this.db, this.crypto, password);
-                            if (success) {
-                                // 生成并保存新密钥
-                                await this.crypto.generateNewKey();
-                                await this.crypto.saveKey(this.db);
-                                cleanup();
-                                alert('数据迁移成功！');
-                                resolve(true);
-                            } else {
-                                errorDiv.textContent = '密码错误或数据损坏，请重试';
-                                errorDiv.style.display = 'block';
-                                confirmBtn.disabled = false;
-                                confirmBtn.textContent = '迁移';
+                    const Indent = Extension.create({
+                        name: 'indent',
+                        addGlobalAttributes() {
+                            return [{
+                                types: ['paragraph', 'heading'],
+                                attributes: {
+                                    indent: {
+                                        default: 0,
+                                        parseHTML: el => Math.floor((parseInt(el.style.paddingLeft) || 0) / 20),
+                                        renderHTML: attrs => attrs.indent ? { style: `padding-left: ${attrs.indent * 20}px` } : {}
+                                    }
+                                }
+                            }];
+                        },
+                        addCommands() {
+                            return {
+                                indent: () => ({ state, dispatch }) => {
+                                    const { from, to } = state.selection;
+                                    let tr = state.tr, changed = false;
+                                    state.doc.nodesBetween(from, to, (node, pos) => {
+                                        if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) {
+                                            const indent = Math.min((node.attrs.indent || 0) + 1, 3);
+                                            tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
+                                            changed = true;
+                                        }
+                                    });
+                                    if (changed) { dispatch(tr); return true; }
+                                    return false;
+                                },
+                                outdent: () => ({ state, dispatch }) => {
+                                    const { from, to } = state.selection;
+                                    let tr = state.tr, changed = false;
+                                    state.doc.nodesBetween(from, to, (node, pos) => {
+                                        if (node.isTextblock && ['paragraph', 'heading'].includes(node.type.name)) {
+                                            const indent = Math.max((node.attrs.indent || 0) - 1, 0);
+                                            tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
+                                            changed = true;
+                                        }
+                                    });
+                                    if (changed) { dispatch(tr); return true; }
+                                    return false;
+                                }
+                            };
+                        }
+                    });
+
+                    // 初始化编辑器
+                    this.editor = new Editor({
+                        element: this.els.tiptapEditor,
+                        extensions: [
+                            StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+                            Underline, TextStyle,
+                            Color.configure({ types: ['textStyle'] }),
+                            Highlight.configure({ multicolor: true }),
+                            TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right'] }),
+                            ImageExtension.configure({ allowBase64: true }),
+                            FontSize, Indent,
+                            Placeholder.configure({ placeholder: '开始记录...' })
+                        ],
+                        content: { type: 'doc', content: [{ type: 'paragraph' }] },
+                        editorProps: {
+                            attributes: { class: 'ProseMirror' },
+                            handlePaste: (view, event) => {
+                                const items = event.clipboardData?.items;
+                                if (items) {
+                                    for (let item of items) {
+                                        if (item.type.startsWith('image/')) {
+                                            const file = item.getAsFile();
+                                            if (file) { this.handleImageFile(file); event.preventDefault(); return true; }
+                                        }
+                                    }
+                                }
+                                return false;
                             }
-                        } catch (e) {
-                            errorDiv.textContent = '迁移失败: ' + e.message;
-                            errorDiv.style.display = 'block';
-                            confirmBtn.disabled = false;
-                            confirmBtn.textContent = '迁移';
-                        }
-                    };
+                        },
+                        onUpdate: () => { this.triggerAutoSave(); this.updateToolbarState(); },
+                        onSelectionUpdate: () => { this.updateToolbarState(); }
+                    });
 
-                    confirmBtn.addEventListener('click', doMigration);
-                    skipBtn.addEventListener('click', () => {
-                        if (confirm('放弃旧数据将导致所有旧笔记无法恢复，确定吗？')) {
-                            cleanup();
-                            resolve(false);
+                    this.useRichEditor = true;
+                    this.editorFallback = false;
+                    // 显示富文本编辑区，隐藏纯文本
+                    this.els.tiptapEditor.style.display = 'block';
+                    this.els.plainEditor.style.display = 'none';
+                    this.els.toolbar.style.display = 'flex'; // 显示工具栏
+                    console.log('富文本编辑器加载成功');
+                } catch (err) {
+                    console.warn('富文本编辑器加载失败，降级为纯文本:', err);
+                    this.fallbackToPlainEditor();
+                }
+            }
+
+            // 降级到纯文本
+            fallbackToPlainEditor() {
+                this.useRichEditor = false;
+                this.editorFallback = true;
+                this.els.tiptapEditor.style.display = 'none';
+                this.els.plainEditor.style.display = 'block';
+                this.els.toolbar.style.display = 'none';
+                // 绑定纯文本的事件
+                this.els.plainEditor.addEventListener('input', () => {
+                    this.triggerAutoSave();
+                });
+                // 恢复编辑器内容（如果已有内容）
+                if (this.editingId) {
+                    this.db.getNote(this.editingId).then(note => {
+                        if (note && note.content) {
+                            // content 可能是 JSON 或纯文本，如果是 JSON 提取文本
+                            let text = '';
+                            if (typeof note.content === 'object') {
+                                text = extractText(note.content);
+                            } else {
+                                text = note.content;
+                            }
+                            this.els.plainEditor.value = text;
+                            this.lastSavedContent = text;
                         }
                     });
-                    passwordInput.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') doMigration();
-                    });
-                    // 不允许点击背景关闭，防止误操作
-                });
+                }
+                console.log('已切换到纯文本编辑');
             }
 
             // ===== 分类管理 =====
@@ -977,7 +810,6 @@
                         const id = e.target.dataset.id;
                         const name = e.target.value.trim();
                         if (!name) {
-                            alert('分类名称不能为空');
                             this.renderCategoryList();
                             return;
                         }
@@ -1051,7 +883,12 @@
                 notes.forEach(n => {
                     const div = document.createElement('div');
                     div.className = 'note-item';
-                    const preview = extractText(n.content).substring(0, 100);
+                    let preview = '';
+                    if (typeof n.content === 'object') {
+                        preview = extractText(n.content).substring(0, 100);
+                    } else {
+                        preview = (n.content || '').substring(0, 100);
+                    }
                     const categoryName = categoryMap[n.category] || '未分类';
                     div.innerHTML = `
                         <div class="note-title">${escapeHtml(n.title || '未命名')}</div>
@@ -1068,25 +905,22 @@
 
             // ===== 编辑器 =====
             bindEditorEvents() {
+                // 工具栏按钮（仅当富文本可用时有效）
                 this.els.toolbar.querySelectorAll('[data-action]').forEach(btn => {
                     btn.addEventListener('mousedown', e => e.preventDefault());
                     btn.addEventListener('click', () => {
-                        if (!this.editor) return;
-                        this.executeAction(btn.dataset.action);
+                        if (this.editor) this.executeAction(btn.dataset.action);
                     });
                 });
 
                 this.els.textColorPicker.addEventListener('input', e => {
-                    if (!this.editor) return;
-                    this.editor.chain().focus().setColor(e.target.value).run();
+                    if (this.editor) this.editor.chain().focus().setColor(e.target.value).run();
                 });
                 this.els.textBgColorPicker.addEventListener('input', e => {
-                    if (!this.editor) return;
-                    this.editor.chain().focus().setHighlight({ color: e.target.value }).run();
+                    if (this.editor) this.editor.chain().focus().setHighlight({ color: e.target.value }).run();
                 });
                 this.els.fontSizeSelect.addEventListener('change', e => {
-                    if (!this.editor) return;
-                    this.editor.chain().focus().setMark('fontSize', { fontSize: e.target.value + 'px' }).run();
+                    if (this.editor) this.editor.chain().focus().setMark('fontSize', { fontSize: e.target.value + 'px' }).run();
                 });
 
                 this.els.timestampBtn.addEventListener('click', () => {
@@ -1099,8 +933,8 @@
                 });
 
                 this.els.toggleToolbarBtn.addEventListener('click', () => {
-                    const isHidden = this.els.toolbar.style.display === 'none' || getComputedStyle(this.els.toolbar)
-                        .display === 'none';
+                    if (this.editorFallback) return;
+                    const isHidden = this.els.toolbar.style.display === 'none' || getComputedStyle(this.els.toolbar).display === 'none';
                     if (isHidden) {
                         this.els.toolbar.style.display = 'flex';
                         this.els.toggleToolbarText.innerText = '隐藏格式工具栏';
@@ -1125,15 +959,15 @@
                 document.body.style.right = '0';
                 document.body.style.width = '100%';
 
-                let content = { type: 'doc', content: [{ type: 'paragraph' }] };
                 let title = '';
                 let category = 'daily';
+                let content = null;
 
                 if (id) {
                     const note = await this.db.getNote(id);
                     if (note) {
                         title = note.title || '';
-                        content = note.content || content;
+                        content = note.content;
                         category = note.category || category;
                     }
                 }
@@ -1141,51 +975,36 @@
                 this.els.noteTitleInput.value = title;
                 this.els.categorySelect.value = category;
 
-                if (!this.editor) {
-                    this.editor = new Editor({
-                        element: document.getElementById('tiptap-editor'),
-                        extensions: [
-                            StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-                            Underline, TextStyle,
-                            Color.configure({ types: ['textStyle'] }),
-                            Highlight.configure({ multicolor: true }),
-                            TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center',
-                                    'right'
-                                ] }),
-                            ImageExtension.configure({ allowBase64: true }),
-                            FontSize, Indent,
-                            Placeholder.configure({ placeholder: '开始记录...' })
-                        ],
-                        content: content,
-                        editorProps: {
-                            attributes: { class: 'ProseMirror' },
-                            handlePaste: (view, event) => {
-                                const items = event.clipboardData?.items;
-                                if (items) {
-                                    for (let item of items) {
-                                        if (item.type.startsWith('image/')) {
-                                            const file = item.getAsFile();
-                                            if (file) {
-                                                this.handleImageFile(file);
-                                                event.preventDefault();
-                                                return true;
-                                            }
-                                        }
-                                    }
-                                }
-                                return false;
-                            }
-                        },
-                        onUpdate: () => { this.triggerAutoSave();
-                            this.updateToolbarState(); },
-                        onSelectionUpdate: () => { this.updateToolbarState(); }
-                    });
-                } else {
-                    this.editor.commands.setContent(content);
+                if (this.editorFallback) {
+                    // 降级模式：使用纯文本
+                    const plain = this.els.plainEditor;
+                    let text = '';
+                    if (content) {
+                        if (typeof content === 'object') {
+                            text = extractText(content);
+                        } else {
+                            text = content;
+                        }
+                    }
+                    plain.value = text;
+                    this.lastSavedContent = text;
+                } else if (this.editor) {
+                    // 富文本模式
+                    let doc = content || { type: 'doc', content: [{ type: 'paragraph' }] };
+                    if (typeof doc === 'string') {
+                        // 兼容旧纯文本，转为JSON
+                        doc = convertPlainToJSON(doc);
+                    }
+                    this.editor.commands.setContent(doc);
+                    this.lastSavedContent = JSON.stringify(this.editor.getJSON());
+                    this.updateToolbarState();
+                    setTimeout(() => this.editor.commands.focus(), 300);
                 }
-                this.lastSavedContent = JSON.stringify(this.editor.getJSON());
-                this.updateToolbarState();
-                setTimeout(() => this.editor.commands.focus(), 300);
+
+                // 如果是降级模式，聚焦文本域
+                if (this.editorFallback) {
+                    setTimeout(() => this.els.plainEditor.focus(), 300);
+                }
             }
 
             closeEditor(shouldSave = true) {
@@ -1204,21 +1023,33 @@
             }
 
             async saveNote(force = false) {
-                if (!this.editor) return;
-                const currentContent = JSON.stringify(this.editor.getJSON());
-                if (!force && currentContent === this.lastSavedContent) return;
+                let contentToSave;
+                let title = this.els.noteTitleInput.value.trim() || '未命名笔记';
+                let category = this.els.categorySelect.value;
+
+                if (this.editorFallback) {
+                    // 纯文本
+                    contentToSave = this.els.plainEditor.value;
+                } else if (this.editor) {
+                    // 富文本
+                    const currentContent = JSON.stringify(this.editor.getJSON());
+                    if (!force && currentContent === this.lastSavedContent) return;
+                    contentToSave = this.editor.getJSON();
+                } else {
+                    return;
+                }
 
                 const noteData = {
                     id: this.editingId || Date.now().toString(),
-                    title: this.els.noteTitleInput.value.trim() || '未命名笔记',
-                    content: this.editor.getJSON(),
-                    category: this.els.categorySelect.value,
+                    title: title,
+                    content: contentToSave,
+                    category: category,
                     updatedAt: new Date().toISOString()
                 };
 
                 try {
                     await this.db.saveNote(noteData);
-                    this.lastSavedContent = currentContent;
+                    this.lastSavedContent = typeof contentToSave === 'string' ? contentToSave : JSON.stringify(contentToSave);
                     if (!this.editingId) this.editingId = noteData.id;
                     this.els.autoSaveStatus.textContent = '已保存';
                     this.els.autoSaveStatus.classList.add('show');
@@ -1244,66 +1075,26 @@
                 if (!this.editor) return;
                 const chain = this.editor.chain().focus();
                 switch (action) {
-                    case 'toggleBold':
-                        chain.toggleBold().run();
-                        break;
-                    case 'toggleItalic':
-                        chain.toggleItalic().run();
-                        break;
-                    case 'toggleUnderline':
-                        chain.toggleUnderline().run();
-                        break;
-                    case 'toggleStrike':
-                        chain.toggleStrike().run();
-                        break;
-                    case 'toggleCode':
-                        chain.toggleCode().run();
-                        break;
-                    case 'unsetAllMarks':
-                        chain.unsetAllMarks().run();
-                        break;
-                    case 'setHeading-1':
-                        chain.setHeading({ level: 1 }).run();
-                        break;
-                    case 'setHeading-2':
-                        chain.setHeading({ level: 2 }).run();
-                        break;
-                    case 'setHeading-3':
-                        chain.setHeading({ level: 3 }).run();
-                        break;
-                    case 'setParagraph':
-                        chain.setParagraph().run();
-                        break;
-                    case 'toggleBulletList':
-                        chain.toggleBulletList().run();
-                        break;
-                    case 'toggleOrderedList':
-                        chain.toggleOrderedList().run();
-                        break;
-                    case 'toggleBlockquote':
-                        chain.toggleBlockquote().run();
-                        break;
-                    case 'toggleCodeBlock':
-                        chain.toggleCodeBlock().run();
-                        break;
-                    case 'setTextAlign-left':
-                        chain.setTextAlign('left').run();
-                        break;
-                    case 'setTextAlign-center':
-                        chain.setTextAlign('center').run();
-                        break;
-                    case 'setTextAlign-right':
-                        chain.setTextAlign('right').run();
-                        break;
-                    case 'indent':
-                        chain.indent().run();
-                        break;
-                    case 'outdent':
-                        chain.outdent().run();
-                        break;
-                    case 'insertImage':
-                        this.insertImage();
-                        break;
+                    case 'toggleBold': chain.toggleBold().run(); break;
+                    case 'toggleItalic': chain.toggleItalic().run(); break;
+                    case 'toggleUnderline': chain.toggleUnderline().run(); break;
+                    case 'toggleStrike': chain.toggleStrike().run(); break;
+                    case 'toggleCode': chain.toggleCode().run(); break;
+                    case 'unsetAllMarks': chain.unsetAllMarks().run(); break;
+                    case 'setHeading-1': chain.setHeading({ level: 1 }).run(); break;
+                    case 'setHeading-2': chain.setHeading({ level: 2 }).run(); break;
+                    case 'setHeading-3': chain.setHeading({ level: 3 }).run(); break;
+                    case 'setParagraph': chain.setParagraph().run(); break;
+                    case 'toggleBulletList': chain.toggleBulletList().run(); break;
+                    case 'toggleOrderedList': chain.toggleOrderedList().run(); break;
+                    case 'toggleBlockquote': chain.toggleBlockquote().run(); break;
+                    case 'toggleCodeBlock': chain.toggleCodeBlock().run(); break;
+                    case 'setTextAlign-left': chain.setTextAlign('left').run(); break;
+                    case 'setTextAlign-center': chain.setTextAlign('center').run(); break;
+                    case 'setTextAlign-right': chain.setTextAlign('right').run(); break;
+                    case 'indent': chain.indent().run(); break;
+                    case 'outdent': chain.outdent().run(); break;
+                    case 'insertImage': this.insertImage(); break;
                 }
                 this.updateToolbarState();
                 this.triggerAutoSave();
@@ -1354,7 +1145,17 @@
 
             insertTimestamp(format) {
                 const timestamp = this.formatTimestamp(new Date(), this.getTimestampFormat(format));
-                if (this.editor) {
+                if (this.editorFallback) {
+                    // 纯文本插入
+                    const plain = this.els.plainEditor;
+                    const start = plain.selectionStart;
+                    const end = plain.selectionEnd;
+                    const val = plain.value;
+                    plain.value = val.substring(0, start) + timestamp + val.substring(end);
+                    plain.setSelectionRange(start + timestamp.length, start + timestamp.length);
+                    plain.focus();
+                    this.triggerAutoSave();
+                } else if (this.editor) {
                     this.editor.chain().focus().insertContent(timestamp).run();
                     this.triggerAutoSave();
                 }
@@ -1400,6 +1201,10 @@
             }
 
             insertImage() {
+                if (this.editorFallback) {
+                    alert('降级模式下不支持插入图片，请联网后使用富文本编辑。');
+                    return;
+                }
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*';
@@ -1443,28 +1248,23 @@
             // ===== 导入导出 =====
             async exportNotes(format) {
                 let notes = await this.db.getAllNotes();
-                const cleanNotes = notes.map(n => {
-                    const { encryptedContent, ...rest } = n;
-                    return rest;
-                });
                 const categories = await this.db.getAllCategories();
 
                 if (format === 'json') {
-                    const data = {
-                        app: '素记日记',
-                        version: '3.1',
-                        exportDate: new Date().toISOString(),
-                        noteCount: cleanNotes.length,
-                        categories,
-                        notes: cleanNotes
-                    };
+                    const data = { app: '素记日记', version: '3.0', exportDate: new Date().toISOString(), noteCount: notes.length, categories, notes };
                     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                     this.downloadBlob(blob, `素记日记_${new Date().toISOString().slice(0, 10)}.json`);
                 } else {
-                    let md = `# 素记日记 - 笔记导出\n\n- **导出时间**: ${this.formatTimestamp(new Date(), 'YYYY年MM月DD日 HH:mm:ss')}\n- **笔记总数**: ${cleanNotes.length}\n\n---\n\n`;
-                    cleanNotes.forEach((n, i) => {
+                    let md = `# 素记日记 - 笔记导出\n\n- **导出时间**: ${this.formatTimestamp(new Date(), 'YYYY年MM月DD日 HH:mm:ss')}\n- **笔记总数**: ${notes.length}\n\n---\n\n`;
+                    notes.forEach((n, i) => {
                         const cat = categories.find(c => c.id === n.category);
-                        md += `## 笔记 ${i+1}: ${n.title}\n\n- **分类**: ${cat ? cat.name : n.category}\n- **更新**: ${this.formatTimestamp(new Date(n.updatedAt), 'YYYY年MM月DD日 HH:mm:ss')}\n\n---\n\n${extractText(n.content)}\n\n---\n\n`;
+                        let contentText = '';
+                        if (typeof n.content === 'object') {
+                            contentText = extractText(n.content);
+                        } else {
+                            contentText = n.content || '';
+                        }
+                        md += `## 笔记 ${i+1}: ${n.title}\n\n- **分类**: ${cat ? cat.name : n.category}\n- **更新**: ${this.formatTimestamp(new Date(n.updatedAt), 'YYYY年MM月DD日 HH:mm:ss')}\n\n---\n\n${contentText}\n\n---\n\n`;
                     });
                     const blob = new Blob([md], { type: 'text/markdown' });
                     this.downloadBlob(blob, `素记日记_${new Date().toISOString().slice(0, 10)}.md`);
@@ -1503,13 +1303,10 @@
                         }
                         let count = 0;
                         for (const note of notes) {
-                            let content = note.content;
-                            if (typeof content === 'string') content = convertPlainToJSON(content);
                             const newNote = {
-                                id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' +
-                                    count,
+                                id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' + count,
                                 title: note.title || '未命名笔记',
-                                content: content || { type: 'doc', content: [{ type: 'paragraph' }] },
+                                content: note.content || { type: 'doc', content: [{ type: 'paragraph' }] },
                                 category: note.category || 'daily',
                                 createdAt: note.createdAt || new Date().toISOString(),
                                 updatedAt: note.updatedAt || new Date().toISOString()
@@ -1532,8 +1329,7 @@
                 reader.onload = async (ev) => {
                     const content = ev.target.result;
                     const lines = content.split('\n');
-                    let currentNote = null,
-                        count = 0;
+                    let currentNote = null, count = 0;
                     for (const line of lines) {
                         if (line.startsWith('## 笔记')) {
                             if (currentNote) {
@@ -1541,11 +1337,7 @@
                                 count++;
                             }
                             const match = line.match(/## 笔记 \d+: (.+)/);
-                            currentNote = {
-                                title: match ? match[1] : '未命名笔记',
-                                content: '',
-                                category: 'daily'
-                            };
+                            currentNote = { title: match ? match[1] : '未命名笔记', content: '', category: 'daily' };
                         } else if (currentNote && line.trim() && !line.startsWith('- **')) {
                             currentNote.content += line + '\n';
                         }
@@ -1561,11 +1353,10 @@
             }
 
             async saveCurrentNote(note) {
-                const content = convertPlainToJSON(note.content.trim());
                 const newNote = {
                     id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
                     title: note.title,
-                    content: content,
+                    content: convertPlainToJSON(note.content.trim()),
                     category: note.category || 'daily',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
@@ -1578,8 +1369,8 @@
                 this.els.addButton.addEventListener('click', () => this.openEditor());
 
                 this.els.closeEditor.addEventListener('click', () => this.closeEditor(true));
-                this.els.saveNote.addEventListener('click', () => this.saveNote(true));
-                this.els.deleteNote.addEventListener('click', () => this.deleteNote());
+                this.els.saveNoteBtn.addEventListener('click', () => this.saveNote(true));
+                this.els.deleteNoteBtn.addEventListener('click', () => this.deleteNote());
 
                 this.els.searchBtn.addEventListener('click', () => {
                     const display = this.els.searchContainer.style.display;
@@ -1596,8 +1387,7 @@
                     await this.renderCategoryList();
                     this.showModal(this.els.categoryManageModal);
                 });
-                this.els.closeCategoryManageModal.addEventListener('click', () => this.hideModal(this.els
-                    .categoryManageModal));
+                this.els.closeCategoryManageModal.addEventListener('click', () => this.hideModal(this.els.categoryManageModal));
                 this.els.addNewCategoryBtn.addEventListener('click', async () => {
                     const name = this.els.newCategoryName.value.trim();
                     const color = this.els.newCategoryColor.value;
@@ -1626,9 +1416,7 @@
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.accept = '.json';
-                    input.onchange = (e) => {
-                        if (e.target.files[0]) this.importJSON(e.target.files[0]);
-                    };
+                    input.onchange = (e) => { if (e.target.files[0]) this.importJSON(e.target.files[0]); };
                     input.click();
                 });
                 this.els.importTxtBtn.addEventListener('click', () => {
@@ -1636,19 +1424,8 @@
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.accept = '.md,.txt';
-                    input.onchange = (e) => {
-                        if (e.target.files[0]) this.importMarkdown(e.target.files[0]);
-                    };
+                    input.onchange = (e) => { if (e.target.files[0]) this.importMarkdown(e.target.files[0]); };
                     input.click();
-                });
-
-                this.els.backupBtn.addEventListener('click', async () => {
-                    let notes = await this.db.getAllNotes();
-                    const cleanNotes = notes.map(({ encryptedContent, ...rest }) => rest);
-                    const cats = await this.db.getAllCategories();
-                    const data = { timestamp: new Date().toISOString(), notes: cleanNotes, categories: cats };
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    this.downloadBlob(blob, `素记备份_${new Date().toISOString().slice(0, 10)}.json`);
                 });
 
                 this.els.clearDataBtn.addEventListener('click', () => this.showModal(this.els.clearDataModal));
@@ -1688,17 +1465,14 @@
                     if (e.key === 'Escape' && this.els.editorContainer.classList.contains('active')) {
                         this.closeEditor(true);
                     }
-                    if ((e.ctrlKey || e.metaKey) && e.key === 's' && this.els.editorContainer.classList.contains(
-                        'active')) {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's' && this.els.editorContainer.classList.contains('active')) {
                         e.preventDefault();
                         this.saveNote(true);
                     }
                 });
 
-                this.els.closeCustomTimestampModal.addEventListener('click', () => this.hideModal(this.els
-                    .customTimestampModal));
-                this.els.cancelCustomTimestamp.addEventListener('click', () => this.hideModal(this.els
-                    .customTimestampModal));
+                this.els.closeCustomTimestampModal.addEventListener('click', () => this.hideModal(this.els.customTimestampModal));
+                this.els.cancelCustomTimestamp.addEventListener('click', () => this.hideModal(this.els.customTimestampModal));
                 this.els.insertCustomTimestamp.addEventListener('click', () => {
                     this.insertTimestamp('custom');
                     this.hideModal(this.els.customTimestampModal);
@@ -1717,16 +1491,10 @@
 
             loadSettingsToUI() {
                 this.db.getSetting('autoSaveInterval').then(val => {
-                    if (val) {
-                        this.settings.autoSaveInterval = val;
-                        this.els.autoSaveIntervalInput.value = val / 1000;
-                    }
+                    if (val) { this.settings.autoSaveInterval = val; this.els.autoSaveIntervalInput.value = val / 1000; }
                 });
                 this.db.getSetting('showAutoSaveStatus').then(val => {
-                    if (val !== undefined) {
-                        this.settings.showAutoSaveStatus = val;
-                        this.els.autoSaveShowStatus.checked = val;
-                    }
+                    if (val !== undefined) { this.settings.showAutoSaveStatus = val; this.els.autoSaveShowStatus.checked = val; }
                 });
             }
 
@@ -1743,6 +1511,8 @@
                 if (saved === 'dark' || (!saved && prefersDark)) {
                     document.documentElement.setAttribute('data-theme', 'dark');
                     this.els.themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+                } else {
+                    this.els.themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
                 }
             }
 
@@ -1759,14 +1529,10 @@
                     onResize();
                 }
 
-                let startX = 0,
-                    currentX = 0,
-                    isDragging = false;
+                let startX = 0, currentX = 0, isDragging = false;
                 const ec = this.els.editorContainer;
                 ec.addEventListener('touchstart', e => {
-                    if (e.touches[0].clientX < 30) { isDragging = true;
-                        startX = e.touches[0].clientX;
-                        ec.classList.add('swiping'); }
+                    if (e.touches[0].clientX < 30) { isDragging = true; startX = e.touches[0].clientX; ec.classList.add('swiping'); }
                 }, { passive: true });
                 ec.addEventListener('touchmove', e => {
                     if (!isDragging) return;
