@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>-素记日记-</title>
+    <title>素记日记</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
     <style>
@@ -96,7 +96,7 @@
     </style>
 </head>
 <body>
-    <!-- ===== 主界面 ===== -->
+    <!-- 主界面 -->
     <div id="appContent">
         <header class="header">
             <div class="container">
@@ -214,23 +214,23 @@
         <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
     </div>
 
-    <!-- ===== 迁移模态框 ===== -->
+    <!-- 迁移模态框 -->
     <div class="modal-overlay" id="migrationModal">
         <div class="modal">
             <div class="modal-header"><h3>🔄 数据迁移</h3></div>
             <div class="modal-body">
                 <p>检测到旧版加密数据，请输入您之前设置的密码以完成迁移。</p>
                 <input type="password" id="migrationPassword" placeholder="旧密码" style="width:100%;padding:10px;margin-top:12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);font-size:16px;">
-                <div id="migrationError" style="color:var(--danger-color);margin-top:8px;display:none;">密码错误，请重试。</div>
+                <div id="migrationError" style="color:var(--danger-color);margin-top:8px;display:none;"></div>
                 <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-                    <button class="modal-btn secondary" id="migrationSkipBtn">跳过（将丢失旧数据）</button>
+                    <button class="modal-btn secondary" id="migrationSkipBtn">放弃旧数据</button>
                     <button class="modal-btn primary" id="migrationConfirmBtn">迁移</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ===== 其他模态框 ===== -->
+    <!-- 其他模态框 -->
     <div class="modal-overlay" id="categoryManageModal">
         <div class="modal">
             <div class="modal-header"><h3><i class="fas fa-tags"></i> 管理分类</h3><button class="modal-close" id="closeCategoryManageModal"><i class="fas fa-times"></i></button></div>
@@ -665,8 +665,7 @@
                     try {
                         const canvas = document.createElement('canvas');
                         let w = img.width, h = img.height;
-                        if (w > maxWidth) { h = (h * maxWidth) / w;
-                            w = maxWidth; }
+                        if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
                         canvas.width = w;
                         canvas.height = h;
                         const ctx = canvas.getContext('2d');
@@ -689,7 +688,7 @@
             });
         }
 
-        // ===== 迁移逻辑 =====
+        // ===== 迁移函数 =====
         async function performMigration(db, crypto, password) {
             const saltStr = await db.getSetting('salt');
             if (!saltStr) return false;
@@ -707,16 +706,17 @@
                         await db.saveNote(note);
                         migratedCount++;
                     } else {
-                        return false; // 密码错误
+                        return false; // 密码错误或数据损坏
                     }
                 }
             }
+            // 迁移成功，清除旧版字段
             await db.setSetting('salt', null);
             await db.setSetting('authCheck', null);
             return true;
         }
 
-        // ===== App 主类 =====
+        // ===== App 类 =====
         class App {
             constructor() {
                 this.crypto = new CryptoManager();
@@ -729,7 +729,6 @@
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
 
                 this.initElements();
-                // 启动初始化（异步）
                 this.init();
             }
 
@@ -805,18 +804,25 @@
                 const hasCryptoKey = await this.db.getSetting('cryptoKey');
 
                 if (salt && !hasCryptoKey) {
+                    // 需要迁移
                     const migrated = await this.showMigrationDialog();
-                    if (!migrated) {
-                        // 用户跳过迁移，清除旧数据并生成新密钥
+                    if (migrated) {
+                        // 迁移成功，已有新密钥
+                        console.log('迁移完成');
+                    } else {
+                        // 用户放弃，清除旧数据并生成新密钥
                         await this.db.setSetting('salt', null);
                         await this.db.setSetting('authCheck', null);
                         await this.crypto.generateNewKey();
                         await this.crypto.saveKey(this.db);
+                        console.log('已放弃旧数据');
                     }
                 } else if (!hasCryptoKey) {
+                    // 全新安装
                     await this.crypto.generateNewKey();
                     await this.crypto.saveKey(this.db);
                 } else {
+                    // 加载已有密钥
                     await this.crypto.loadKey(this.db);
                 }
 
@@ -840,12 +846,13 @@
                     const confirmBtn = this.els.migrationConfirmBtn;
                     const skipBtn = this.els.migrationSkipBtn;
 
+                    passwordInput.value = '';
+                    errorDiv.style.display = 'none';
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '迁移';
+
                     const cleanup = () => {
                         modal.classList.remove('active');
-                        passwordInput.value = '';
-                        errorDiv.style.display = 'none';
-                        confirmBtn.disabled = false;
-                        confirmBtn.textContent = '迁移';
                     };
 
                     const doMigration = async () => {
@@ -884,7 +891,7 @@
 
                     confirmBtn.addEventListener('click', doMigration);
                     skipBtn.addEventListener('click', () => {
-                        if (confirm('跳过迁移将丢失所有旧数据，确定吗？')) {
+                        if (confirm('放弃旧数据将导致所有旧笔记无法恢复，确定吗？')) {
                             cleanup();
                             resolve(false);
                         }
@@ -892,9 +899,7 @@
                     passwordInput.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') doMigration();
                     });
-                    modal.addEventListener('click', (e) => {
-                        if (e.target === modal) skipBtn.click();
-                    });
+                    // 不允许点击背景关闭，防止误操作
                 });
             }
 
@@ -1779,7 +1784,7 @@
             }
         }
 
-        // ===== 启动应用 =====
+        // ===== 启动 =====
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new App();
         });
