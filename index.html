@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>素记日记-加密完整版</title>
+    <title>素记日记</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="./manifest.json">
     <style>
@@ -24,26 +24,6 @@
         }
         body { background-color: var(--bg-color); color: var(--text-primary); line-height: 1.5; overflow-x: hidden; }
         .container { max-width: 800px; margin: 0 auto; padding: 0 16px; }
-
-        .lock-screen {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--bg-color); z-index: 5000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; transition: opacity 0.4s ease;
-        }
-        .lock-screen.hide { opacity: 0; pointer-events: none; }
-        .lock-card {
-            background: var(--card-color); padding: 32px 28px; border-radius: var(--radius); box-shadow: var(--shadow);
-            width: 100%; max-width: 360px; text-align: center;
-        }
-        .lock-card i { font-size: 48px; color: var(--primary-color); margin-bottom: 16px; }
-        .lock-card h2 { margin-bottom: 8px; }
-        .lock-card p { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
-        .lock-input { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 16px; margin-bottom: 12px; text-align: center; background: var(--card-color); color: var(--text-primary); }
-        .lock-input:focus { outline: none; border-color: var(--primary-color); }
-        .lock-btn { width: 100%; padding: 14px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        .lock-btn:active { background: var(--secondary-color); }
-        .lock-error { color: var(--danger-color); font-size: 13px; margin-top: 12px; display: none; }
 
         .header { background-color: var(--card-color); padding: 16px 0; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); border-bottom: 1px solid var(--border-color); }
         .header-content { display: flex; justify-content: space-between; align-items: center; }
@@ -77,12 +57,10 @@
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
         .empty-state i { font-size: 48px; margin-bottom: 16px; color: #DDD; }
 
-        /* === 编辑器区域 === */
         .editor-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--card-color);
             z-index: 1000; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column;
-            overflow: hidden; 
-            overscroll-behavior: contain;
+            overflow: hidden; overscroll-behavior: contain;
         }
         .editor-container.active { transform: translateX(0); }
         .editor-container.swiping { transition: none; }
@@ -100,10 +78,8 @@
 
         .editor-content { 
             flex: 1; padding: 16px; display: flex; flex-direction: column; 
-            min-height: 0; 
-            overflow: hidden; 
+            min-height: 0; overflow: hidden; 
         }
-        
         .title-row {
             display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
         }
@@ -145,9 +121,7 @@
 
         #tiptap-editor { 
             flex: 1; font-size: 16px; line-height: 1.6; outline: none; padding-bottom: 40px; 
-            min-height: 0; 
-            overflow-y: auto; 
-            overscroll-behavior: contain;
+            min-height: 0; overflow-y: auto; overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
         }
         .ProseMirror { outline: none; min-height: 100%; }
@@ -173,8 +147,6 @@
             box-shadow: 0 4px 16px rgba(93, 92, 222, 0.4); z-index: 100; display: flex; align-items: center; justify-content: center;
         }
         .add-button:active { transform: scale(0.92); }
-
-        /* 注意：.editor-image-btn 已移除，图片按钮已移入工具栏 */
 
         .export-section { margin-top: 20px; background: var(--card-color); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); }
         .export-section button { width: 100%; padding: 12px; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 8px; }
@@ -209,158 +181,145 @@
         [data-theme="dark"] .search-box {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23AAAAAA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
         }
-        [data-theme="dark"] .lock-card { background: #1E1E1E; }
         [data-theme="dark"] .ProseMirror pre { background: #1e1e1e; }
     </style>
 </head>
 <body>
-    <div class="lock-screen" id="lockScreen">
-        <div class="lock-card">
-            <i class="fas fa-lock"></i>
-            <h2 id="lockTitle">解锁日记</h2>
-            <p id="lockDesc">请输入主密码以查看您的笔记</p>
-            <input type="password" class="lock-input" id="lockPasswordInput" placeholder="主密码" autocomplete="current-password">
-            <div class="lock-error" id="lockError">密码错误，请重试</div>
-            <button class="lock-btn" id="lockSubmitBtn">解锁</button>
-        </div>
-    </div>
-
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo"><i class="fas fa-book"></i> <span>素记</span></div>
-                <div class="header-actions">
-                    <button class="icon-btn" id="searchBtn" title="搜索"><i class="fas fa-search"></i></button>
-                    <button class="icon-btn" id="categoryManageBtn" title="管理分类"><i class="fas fa-tags"></i></button>
-                    <button class="icon-btn" id="exportBtn" title="导出/导入"><i class="fas fa-file-export"></i></button>
-                    <button class="icon-btn" id="themeBtn" title="切换主题"><i class="fas fa-moon"></i></button>
+    <!-- 主界面 -->
+    <div id="appContent">
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo"><i class="fas fa-book"></i> <span>素记</span></div>
+                    <div class="header-actions">
+                        <button class="icon-btn" id="searchBtn" title="搜索"><i class="fas fa-search"></i></button>
+                        <button class="icon-btn" id="categoryManageBtn" title="管理分类"><i class="fas fa-tags"></i></button>
+                        <button class="icon-btn" id="exportBtn" title="导出/导入"><i class="fas fa-file-export"></i></button>
+                        <button class="icon-btn" id="themeBtn" title="切换主题"><i class="fas fa-moon"></i></button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
+        <main class="main-content">
+            <div class="container">
+                <div class="search-container" id="searchContainer">
+                    <input type="text" class="search-box" id="searchInput" placeholder="搜索标题、内容或分类...">
+                    <button class="clear-search" id="clearSearch"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="categories" id="categories"></div>
+                <div class="notes-list" id="notesList"></div>
 
-    <main class="main-content">
-        <div class="container">
-            <div class="search-container" id="searchContainer">
-                <input type="text" class="search-box" id="searchInput" placeholder="搜索标题、内容或分类...">
-                <button class="clear-search" id="clearSearch"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="categories" id="categories"></div>
-            <div class="notes-list" id="notesList"></div>
+                <div class="export-section" id="exportSection" style="display: none;">
+                    <h3 style="margin-bottom:12px;"><i class="fas fa-file-export"></i> 数据管理</h3>
+                    <button class="lock-btn" id="exportJsonBtn" style="background: var(--text-secondary);">📥 导出 JSON (明文)</button>
+                    <button class="lock-btn" id="exportMarkdownBtn" style="background: var(--secondary-color);">📄 导出 Markdown</button>
+                    <button class="lock-btn" id="importJsonBtn" style="background: var(--primary-color);">📤 导入 JSON</button>
+                    <button class="lock-btn" id="backupBtn" style="background: var(--success-color);">💾 创建备份</button>
+                    <button class="lock-btn" id="clearDataBtn" style="background: var(--danger-color);">🗑️ 清除所有数据</button>
+                </div>
 
-            <div class="export-section" id="exportSection" style="display: none;">
-                <h3 style="margin-bottom:12px;"><i class="fas fa-file-export"></i> 数据管理</h3>
-                <button class="lock-btn" id="exportJsonBtn" style="background: var(--text-secondary);">📥 导出 JSON (明文)</button>
-                <button class="lock-btn" id="exportMarkdownBtn" style="background: var(--secondary-color);">📄 导出 Markdown</button>
-                <button class="lock-btn" id="importJsonBtn" style="background: var(--primary-color);">📤 导入 JSON</button>
-                <button class="lock-btn" id="backupBtn" style="background: var(--success-color);">💾 创建备份</button>
-                <button class="lock-btn" id="clearDataBtn" style="background: var(--danger-color);">🗑️ 清除所有数据</button>
+                <div class="settings-section" id="settingsSection" style="display: none; margin-top: 20px; background: var(--card-color); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow);">
+                    <h3><i class="fas fa-cog"></i> 设置</h3>
+                    <div class="setting-item" style="display:flex;justify-content:space-between;padding:8px 0;">
+                        <label>自动保存间隔（秒）</label>
+                        <div><input type="number" id="autoSaveIntervalInput" value="3" min="1" max="300" style="width:60px;padding:4px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"> 秒</div>
+                    </div>
+                    <div class="setting-item" style="display:flex;justify-content:space-between;padding:8px 0;">
+                        <label>显示自动保存状态</label>
+                        <div><input type="checkbox" id="autoSaveShowStatus" checked></div>
+                    </div>
+                </div>
             </div>
+        </main>
 
-            <div class="settings-section" id="settingsSection" style="display: none; margin-top: 20px; background: var(--card-color); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow);">
-                <h3><i class="fas fa-cog"></i> 设置</h3>
-                <div class="setting-item" style="display:flex;justify-content:space-between;padding:8px 0;">
-                    <label>自动保存间隔（秒）</label>
-                    <div><input type="number" id="autoSaveIntervalInput" value="3" min="1" max="300" style="width:60px;padding:4px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"> 秒</div>
-                </div>
-                <div class="setting-item" style="display:flex;justify-content:space-between;padding:8px 0;">
-                    <label>显示自动保存状态</label>
-                    <div><input type="checkbox" id="autoSaveShowStatus" checked></div>
+        <div class="editor-container" id="editorContainer">
+            <div class="editor-header">
+                <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
+                <div class="auto-save-status" id="autoSaveStatus">已保存</div>
+                <div class="editor-actions">
+                    <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
+                    <button class="icon-btn" id="saveNote" title="保存"><i class="fas fa-check"></i></button>
+                    <button class="icon-btn" id="deleteNote" title="删除"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
-        </div>
-    </main>
+            <div class="editor-content">
+                <div class="title-row">
+                    <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
+                    <select class="category-select" id="categorySelect"></select>
+                </div>
 
-    <div class="editor-container" id="editorContainer">
-        <div class="editor-header">
-            <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
-            <div class="auto-save-status" id="autoSaveStatus">已保存</div>
-            <div class="editor-actions">
-                <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
-                <button class="icon-btn" id="saveNote" title="保存"><i class="fas fa-check"></i></button>
-                <button class="icon-btn" id="deleteNote" title="删除"><i class="fas fa-trash"></i></button>
-            </div>
-        </div>
-        <div class="editor-content">
-            <div class="title-row">
-                <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
-                <select class="category-select" id="categorySelect"></select>
-            </div>
-
-            <div class="toolbar-toggle-container">
-                <button id="toggleToolbarBtn" class="toolbar-toggle-btn">
-                    <i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span>
-                </button>
-            </div>
-
-            <div class="editor-toolbar" id="editorToolbar">
-                <div class="toolbar-group">
-                    <button data-action="toggleBold" title="加粗"><i class="fas fa-bold"></i></button>
-                    <button data-action="toggleItalic" title="斜体"><i class="fas fa-italic"></i></button>
-                    <button data-action="toggleUnderline" title="下划线"><i class="fas fa-underline"></i></button>
-                    <button data-action="toggleStrike" title="删除线"><i class="fas fa-strikethrough"></i></button>
-                    <button data-action="toggleCode" title="行内代码"><i class="fas fa-code"></i></button>
-                    <button data-action="unsetAllMarks" title="清除格式"><i class="fas fa-eraser"></i></button>
-                </div>
-                <div class="toolbar-group">
-                    <button data-action="setHeading-1">H1</button>
-                    <button data-action="setHeading-2">H2</button>
-                    <button data-action="setHeading-3">H3</button>
-                    <button data-action="setParagraph">P</button>
-                </div>
-                <div class="toolbar-group">
-                    <button data-action="toggleBulletList"><i class="fas fa-list-ul"></i></button>
-                    <button data-action="toggleOrderedList"><i class="fas fa-list-ol"></i></button>
-                    <button data-action="toggleBlockquote"><i class="fas fa-quote-right"></i></button>
-                    <button data-action="toggleCodeBlock"><i class="fas fa-code-branch"></i></button>
-                </div>
-                <div class="toolbar-group">
-                    <button data-action="setTextAlign-left"><i class="fas fa-align-left"></i></button>
-                    <button data-action="setTextAlign-center"><i class="fas fa-align-center"></i></button>
-                    <button data-action="setTextAlign-right"><i class="fas fa-align-right"></i></button>
-                </div>
-                <div class="toolbar-group">
-                    <button data-action="indent"><i class="fas fa-indent"></i></button>
-                    <button data-action="outdent"><i class="fas fa-outdent"></i></button>
-                </div>
-                <div class="toolbar-group color-picker-group">
-                    <label><i class="fas fa-palette"></i> <input type="color" id="textColorPicker" value="#333333"></label>
-                    <label><i class="fas fa-highlighter"></i> <input type="color" id="textBgColorPicker" value="#FFFF00"></label>
-                    <select id="fontSizeSelect">
-                        <option value="12">12</option>
-                        <option value="14">14</option>
-                        <option value="16" selected>16</option>
-                        <option value="18">18</option>
-                        <option value="20">20</option>
-                        <option value="24">24</option>
-                        <option value="28">28</option>
-                        <option value="32">32</option>
-                        <option value="36">36</option>
-                    </select>
-                </div>
-                <!-- 新增：图片插入按钮，放在工具栏最右侧 -->
-                <div class="toolbar-group">
-                    <button data-action="insertImage" title="插入图片">
-                        <i class="fas fa-image"></i>
+                <div class="toolbar-toggle-container">
+                    <button id="toggleToolbarBtn" class="toolbar-toggle-btn">
+                        <i class="fas fa-pen-fancy"></i> <span id="toggleToolbarText">显示格式工具栏</span>
                     </button>
                 </div>
-            </div>
 
-            <div id="tiptap-editor"></div>
+                <div class="editor-toolbar" id="editorToolbar">
+                    <div class="toolbar-group">
+                        <button data-action="toggleBold" title="加粗"><i class="fas fa-bold"></i></button>
+                        <button data-action="toggleItalic" title="斜体"><i class="fas fa-italic"></i></button>
+                        <button data-action="toggleUnderline" title="下划线"><i class="fas fa-underline"></i></button>
+                        <button data-action="toggleStrike" title="删除线"><i class="fas fa-strikethrough"></i></button>
+                        <button data-action="toggleCode" title="行内代码"><i class="fas fa-code"></i></button>
+                        <button data-action="unsetAllMarks" title="清除格式"><i class="fas fa-eraser"></i></button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button data-action="setHeading-1">H1</button>
+                        <button data-action="setHeading-2">H2</button>
+                        <button data-action="setHeading-3">H3</button>
+                        <button data-action="setParagraph">P</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button data-action="toggleBulletList"><i class="fas fa-list-ul"></i></button>
+                        <button data-action="toggleOrderedList"><i class="fas fa-list-ol"></i></button>
+                        <button data-action="toggleBlockquote"><i class="fas fa-quote-right"></i></button>
+                        <button data-action="toggleCodeBlock"><i class="fas fa-code-branch"></i></button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button data-action="setTextAlign-left"><i class="fas fa-align-left"></i></button>
+                        <button data-action="setTextAlign-center"><i class="fas fa-align-center"></i></button>
+                        <button data-action="setTextAlign-right"><i class="fas fa-align-right"></i></button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button data-action="indent"><i class="fas fa-indent"></i></button>
+                        <button data-action="outdent"><i class="fas fa-outdent"></i></button>
+                    </div>
+                    <div class="toolbar-group color-picker-group">
+                        <label><i class="fas fa-palette"></i> <input type="color" id="textColorPicker" value="#333333"></label>
+                        <label><i class="fas fa-highlighter"></i> <input type="color" id="textBgColorPicker" value="#FFFF00"></label>
+                        <select id="fontSizeSelect">
+                            <option value="12">12</option>
+                            <option value="14">14</option>
+                            <option value="16" selected>16</option>
+                            <option value="18">18</option>
+                            <option value="20">20</option>
+                            <option value="24">24</option>
+                            <option value="28">28</option>
+                            <option value="32">32</option>
+                            <option value="36">36</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-group">
+                        <button data-action="insertImage" title="插入图片">
+                            <i class="fas fa-image"></i>
+                        </button>
+                    </div>
+                </div>
 
-            <div class="timestamp-toolbar" id="timestampToolbar" style="display: none;">
-                <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
-                <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
-                <button class="timestamp-btn" data-format="time"><i class="fas fa-clock"></i> 时间</button>
-                <button class="timestamp-btn" data-format="week"><i class="fas fa-calendar-week"></i> 星期</button>
-                <button class="timestamp-btn" data-format="custom"><i class="fas fa-pen"></i> 自定义格式</button>
+                <div id="tiptap-editor"></div>
+
+                <div class="timestamp-toolbar" id="timestampToolbar" style="display: none;">
+                    <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
+                    <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
+                    <button class="timestamp-btn" data-format="time"><i class="fas fa-clock"></i> 时间</button>
+                    <button class="timestamp-btn" data-format="week"><i class="fas fa-calendar-week"></i> 星期</button>
+                    <button class="timestamp-btn" data-format="custom"><i class="fas fa-pen"></i> 自定义格式</button>
+                </div>
             </div>
         </div>
 
-        <!-- 浮动图片按钮已移除，图片功能已整合到工具栏中 -->
+        <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
     </div>
-
-    <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
 
     <!-- 模态框 -->
     <div class="modal-overlay" id="categoryManageModal">
@@ -515,32 +474,33 @@
             }
         });
 
+        // ===== 自动密钥管理 =====
         class CryptoManager {
             constructor() { this.key = null; }
-            async deriveKey(password, salt) {
-                const enc = new TextEncoder();
-                const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
-                this.key = await crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-                    keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']
-                );
+            async ensureKey() {
+                // 尝试从 IndexedDB 读取已保存的密钥
+                const db = new DBManager(this);
+                await db.open();
+                let keyData = await db.getSetting('cryptoKey');
+                if (keyData) {
+                    // 还原密钥（假设存储的是 JsonWebKey）
+                    try {
+                        this.key = await crypto.subtle.importKey('jwk', JSON.parse(keyData), { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+                    } catch (e) {
+                        console.warn('密钥导入失败，重新生成');
+                        keyData = null;
+                    }
+                }
+                if (!keyData) {
+                    // 生成新密钥
+                    this.key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+                    // 导出为 JWK 并存储
+                    const jwk = await crypto.subtle.exportKey('jwk', this.key);
+                    await db.setSetting('cryptoKey', JSON.stringify(jwk));
+                }
+                db.db.close();
                 return this.key;
             }
-            
-            bufferToBase64(buffer) {
-                return new Promise((resolve) => {
-                    const blob = new Blob([buffer]);
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.readAsDataURL(blob);
-                });
-            }
-
-            async base64ToBuffer(base64) {
-                const response = await fetch(`data:application/octet-stream;base64,${base64}`);
-                return await response.arrayBuffer();
-            }
-
             async encrypt(data) {
                 if (!this.key) return data;
                 try {
@@ -550,18 +510,20 @@
                     const combined = new Uint8Array(iv.length + ciphertext.byteLength);
                     combined.set(iv, 0);
                     combined.set(new Uint8Array(ciphertext), iv.length);
-                    return await this.bufferToBase64(combined.buffer);
+                    let binary = '';
+                    for (let i = 0; i < combined.length; i++) binary += String.fromCharCode(combined[i]);
+                    return btoa(binary);
                 } catch (e) {
                     console.error('加密失败:', e);
                     return null;
                 }
             }
-
             async decrypt(base64Str) {
                 if (!this.key || typeof base64Str !== 'string') return base64Str;
                 try {
-                    const buffer = await this.base64ToBuffer(base64Str);
-                    const combined = new Uint8Array(buffer);
+                    const binary = atob(base64Str);
+                    const combined = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) combined[i] = binary.charCodeAt(i);
                     const iv = combined.slice(0, 12);
                     const ciphertext = combined.slice(12);
                     const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, this.key, ciphertext);
@@ -716,6 +678,7 @@
             }
         }
 
+        // 工具函数
         function extractText(json) {
             if (!json || typeof json !== 'object') return '';
             let text = '';
@@ -795,6 +758,7 @@
             });
         }
 
+        // ===== 应用主类 =====
         class App {
             constructor() {
                 this.crypto = new CryptoManager();
@@ -807,17 +771,12 @@
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
 
                 this.initElements();
+                // 直接初始化，无需锁屏
                 this.init();
             }
 
             initElements() {
                 this.els = {
-                    lockScreen: document.getElementById('lockScreen'),
-                    lockTitle: document.getElementById('lockTitle'),
-                    lockDesc: document.getElementById('lockDesc'),
-                    lockInput: document.getElementById('lockPasswordInput'),
-                    lockBtn: document.getElementById('lockSubmitBtn'),
-                    lockError: document.getElementById('lockError'),
                     notesList: document.getElementById('notesList'),
                     categories: document.getElementById('categories'),
                     searchContainer: document.getElementById('searchContainer'),
@@ -838,7 +797,6 @@
                     deleteNote: document.getElementById('deleteNote'),
                     timestampBtn: document.getElementById('timestampBtn'),
                     timestampToolbar: document.getElementById('timestampToolbar'),
-                    // 注意：editorImageBtn 已移除，图片功能在工具栏中
                     searchBtn: document.getElementById('searchBtn'),
                     categoryManageBtn: document.getElementById('categoryManageBtn'),
                     exportBtn: document.getElementById('exportBtn'),
@@ -877,100 +835,17 @@
             }
 
             async init() {
+                // 确保密钥准备就绪
+                await this.crypto.ensureKey();
                 await this.db.open();
-                this.bindLockScreen();
                 this.bindGlobalEvents();
-                this.setupViewport();
-            }
-
-            bindLockScreen() {
-                this.checkFirstTime().then(isFirst => {
-                    if (isFirst) {
-                        this.els.lockTitle.innerText = '设置主密码';
-                        this.els.lockDesc.innerText = '此密码用于加密您的日记，请牢记。丢失密码将无法恢复数据。';
-                        this.els.lockBtn.innerText = '设置并进入';
-                        this.els.lockInput.placeholder = '设置主密码 (至少4位)';
-                    } else {
-                        this.els.lockTitle.innerText = '解锁日记';
-                        this.els.lockDesc.innerText = '请输入主密码以查看您的笔记';
-                        this.els.lockBtn.innerText = '解锁';
-                    }
-                });
-
-                this.els.lockBtn.addEventListener('click', async () => {
-                    const password = this.els.lockInput.value;
-                    if (!password || password.length < 4) {
-                        this.els.lockError.textContent = '密码至少4位';
-                        this.els.lockError.style.display = 'block';
-                        return;
-                    }
-
-                    const saltStr = await this.db.getSetting('salt');
-                    if (!saltStr) {
-                        const salt = crypto.getRandomValues(new Uint8Array(16));
-                        await this.crypto.deriveKey(password, salt);
-                        await this.db.setSetting('salt', btoa(String.fromCharCode(...salt)));
-                        const authCheck = await this.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                        await this.db.setSetting('authCheck', authCheck);
-                        await this.initDefaultData();
-                        this.enterApp();
-                    } else {
-                        const salt = Uint8Array.from(atob(saltStr), c => c.charCodeAt(0));
-                        await this.crypto.deriveKey(password, salt);
-                        const authCheck = await this.db.getSetting('authCheck');
-                        let valid = true;
-                        if (authCheck) {
-                            const decrypted = await this.crypto.decrypt(authCheck);
-                            if (decrypted !== "AUTH_CHECK_SUCCESS") valid = false;
-                        } else {
-                            const notes = await this.db.getAllNotes();
-                            if (notes.length > 0 && notes[0].encryptedContent) {
-                                const test = await this.crypto.decrypt(notes[0].encryptedContent);
-                                if (test === null) valid = false;
-                            }
-                            if (valid) {
-                                const newAuthCheck = await this.crypto.encrypt("AUTH_CHECK_SUCCESS");
-                                await this.db.setSetting('authCheck', newAuthCheck);
-                            }
-                        }
-                        if (!valid) {
-                            this.els.lockError.textContent = '密码错误，请重试';
-                            this.els.lockError.style.display = 'block';
-                            this.crypto.key = null;
-                            return;
-                        }
-                        this.enterApp();
-                    }
-                });
-
-                this.els.lockInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') this.els.lockBtn.click();
-                });
-            }
-
-            async checkFirstTime() {
-                const salt = await this.db.getSetting('salt');
-                return !salt;
-            }
-
-            async initDefaultData() {
-                const cats = [
-                    { id: 'daily', name: '小可爱', color: '#5D5CDE', order: 0 },
-                    { id: 'work', name: '阅读', color: '#FF9500', order: 1 },
-                    { id: 'ideas', name: '随记', color: '#34C759', order: 2 },
-                    { id: 'memories', name: '计划', color: '#FF69B4', order: 3 },
-                    { id: 'other', name: '工作', color: '#9E9E9E', order: 4 }
-                ];
-                for (let cat of cats) await this.db.saveCategory(cat);
-            }
-
-            enterApp() {
-                this.els.lockScreen.classList.add('hide');
                 this.bindEditorEvents();
-                this.renderCategories();
-                this.renderNotes();
+                this.setupViewport();
+                await this.renderCategories();
+                await this.renderNotes();
                 this.loadSettingsToUI();
                 this.initTheme();
+                console.log('应用初始化完成');
             }
 
             setupViewport() {
@@ -1198,8 +1073,6 @@
                     if (btn) this.handleTimestampInsert(btn.dataset.format);
                 });
 
-                // 图片插入已通过工具栏按钮处理，无需单独绑定
-
                 this.els.toggleToolbarBtn.addEventListener('click', () => {
                     const isHidden = this.els.toolbar.style.display === 'none' || getComputedStyle(this.els.toolbar).display === 'none';
                     if (isHidden) {
@@ -1220,7 +1093,7 @@
                 this.els.editorContainer.style.height = `${vh}px`;
                 this.els.editorContainer.classList.add('active');
                 
-                // 修复：彻底锁定背景滚动，防止移动端滚动穿透
+                // 锁定背景滚动
                 const scrollY = window.scrollY;
                 document.body.style.position = 'fixed';
                 document.body.style.top = `-${scrollY}px`;
@@ -1290,7 +1163,6 @@
                 this.editingId = null;
                 this.els.timestampToolbar.style.display = 'none';
                 
-                // 修复：恢复背景滚动
                 const scrollY = parseInt(document.body.style.top || '0') * -1;
                 document.body.style.position = '';
                 document.body.style.top = '';
@@ -1757,6 +1629,7 @@
             }
         }
 
+        // ===== 启动应用 =====
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new App();
         });
