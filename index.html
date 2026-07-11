@@ -815,11 +815,14 @@
             async exportNotes(format) {
                 let notes = await this.db.getAllNotes();
                 const categories = await this.db.getAllCategories();
+                let content, mimeType;
+                const dateStr = new Date().toISOString().slice(0, 10);
 
                 if (format === 'json') {
                     const data = { app: '素记日记', version: '4.0', exportDate: new Date().toISOString(), noteCount: notes.length, categories, notes };
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    this.downloadBlob(blob, `素记日记_${new Date().toISOString().slice(0, 10)}.json`);
+                    content = JSON.stringify(data, null, 2);
+                    mimeType = 'application/json';
+                    this.downloadContent(content, `素记日记_${dateStr}.json`, mimeType);
                 } else {
                     let md = `# 素记日记 - 笔记导出\n\n- **导出时间**: ${this.formatTimestamp(new Date(), 'YYYY年MM月DD日 HH:mm:ss')}\n- **笔记总数**: ${notes.length}\n\n---\n\n`;
                     notes.forEach((n, i) => {
@@ -827,20 +830,24 @@
                         const contentText = normalizeContent(n.content);
                         md += `## 笔记 ${i+1}: ${n.title}\n\n- **分类**: ${cat ? cat.name : n.category}\n- **更新**: ${this.formatTimestamp(new Date(n.updatedAt), 'YYYY年MM月DD日 HH:mm:ss')}\n\n---\n\n${contentText}\n\n---\n\n`;
                     });
-                    const blob = new Blob([md], { type: 'text/markdown' });
-                    this.downloadBlob(blob, `素记日记_${new Date().toISOString().slice(0, 10)}.md`);
+                    this.downloadContent(md, `素记日记_${dateStr}.md`, 'text/markdown');
                 }
             }
 
-            downloadBlob(blob, filename) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+            downloadContent(content, filename, mimeType) {
+                if (window.Android) {
+                    Android.saveFile(filename, content);
+                } else {
+                    const blob = new Blob([content], { type: mimeType });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
             }
 
             importJSON(file) {
