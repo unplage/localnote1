@@ -52,8 +52,21 @@
         .title-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
         .note-title-input{width:100%;font-size:22px;font-weight:600;border:none;outline:none;background:transparent;color:var(--text-primary);margin-bottom:0;flex:1;min-width:0}
         .category-select{width:auto;max-width:120px;padding:6px 10px;font-size:14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--card-color);color:var(--text-primary)}
-        #plain-editor{width:100%;font-size:16px;line-height:1.6;padding:12px;border:none;resize:none;outline:none;background:transparent;color:var(--text-primary);font-family:inherit;flex:1}
-        #plain-editor:focus{outline:none}
+        .format-toolbar{display:flex;gap:4px;overflow-x:auto;padding:6px 2px;border-bottom:1px solid var(--border-color);flex-shrink:0;scrollbar-width:none;align-items:center}
+        .format-toolbar::-webkit-scrollbar{display:none}
+        .fmt-btn{flex:0 0 auto;width:34px;height:34px;border:none;background:transparent;color:var(--text-secondary);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .fmt-btn:active,.fmt-btn.active{background:rgba(93,92,222,0.15);color:var(--primary-color)}
+        .fmt-sep{flex:0 0 auto;width:1px;height:22px;background:var(--border-color);margin:0 4px}
+        .fmt-color{flex:0 0 auto;width:34px;height:34px;padding:0;border:none;background:transparent;cursor:pointer}
+        .rich-editor{width:100%;font-size:16px;line-height:1.6;padding:12px;border:none;resize:none;outline:none;background:transparent;color:var(--text-primary);font-family:inherit;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;word-break:break-word}
+        .rich-editor:focus{outline:none}
+        .rich-editor:empty::before{content:attr(data-placeholder);color:var(--text-secondary);pointer-events:none}
+        .rich-editor h1{font-size:1.6em;font-weight:700;margin:.4em 0}
+        .rich-editor h2{font-size:1.35em;font-weight:700;margin:.4em 0}
+        .rich-editor h3{font-size:1.15em;font-weight:700;margin:.4em 0}
+        .rich-editor blockquote{border-left:3px solid var(--primary-color);margin:.4em 0;padding-left:12px;color:var(--text-secondary)}
+        .rich-editor pre{background:rgba(127,127,127,0.12);border-radius:var(--radius-sm);padding:10px;overflow-x:auto;font-family:monospace;white-space:pre-wrap}
+        .rich-editor ul,.rich-editor ol{padding-left:24px;margin:.3em 0}
         .timestamp-toolbar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
         .timestamp-btn{padding:6px 12px;background:rgba(93,92,222,0.1);border:1px solid rgba(93,92,222,0.2);border-radius:var(--radius-sm);color:var(--primary-color);font-size:13px;cursor:pointer}
         .timestamp-btn:hover{background:rgba(93,92,222,0.2)}
@@ -152,7 +165,36 @@
                 <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
                 <select class="category-select" id="categorySelect"></select>
             </div>
-            <textarea id="plain-editor" placeholder="开始记录..."></textarea>
+            <div class="format-toolbar" id="formatToolbar">
+                <button type="button" class="fmt-btn" data-cmd="undo" title="撤销"><i class="fas fa-rotate-left"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="redo" title="重做"><i class="fas fa-rotate-right"></i></button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-block="p" title="正文">正文</button>
+                <button type="button" class="fmt-btn" data-block="h1" title="标题1">H1</button>
+                <button type="button" class="fmt-btn" data-block="h2" title="标题2">H2</button>
+                <button type="button" class="fmt-btn" data-block="h3" title="标题3">H3</button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="bold" title="加粗"><i class="fas fa-bold"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="italic" title="斜体"><i class="fas fa-italic"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="underline" title="下划线"><i class="fas fa-underline"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="strikeThrough" title="删除线"><i class="fas fa-strikethrough"></i></button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="insertUnorderedList" title="无序列表"><i class="fas fa-list-ul"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="insertOrderedList" title="有序列表"><i class="fas fa-list-ol"></i></button>
+                <button type="button" class="fmt-btn" data-block="blockquote" title="引用"><i class="fas fa-quote-left"></i></button>
+                <button type="button" class="fmt-btn" data-block="pre" title="代码块"><i class="fas fa-code"></i></button>
+                <span class="fmt-sep"></span>
+                <input type="color" class="fmt-color" id="foreColorInput" value="#333333" title="文字颜色">
+                <input type="color" class="fmt-color" id="hiliteColorInput" value="#FFFF00" title="高亮颜色">
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="justifyLeft" title="左对齐"><i class="fas fa-align-left"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="justifyCenter" title="居中"><i class="fas fa-align-center"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="justifyRight" title="右对齐"><i class="fas fa-align-right"></i></button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="outdent" title="减少缩进"><i class="fas fa-outdent"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="indent" title="增加缩进"><i class="fas fa-indent"></i></button>
+            </div>
+            <div id="rich-editor" class="rich-editor" contenteditable="true" data-placeholder="开始记录..."></div>
             <div class="timestamp-toolbar" id="timestampToolbar" style="display:none;">
                 <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
                 <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
@@ -253,6 +295,10 @@
                 <div style="display:flex;justify-content:space-between;padding:8px 0;">
                     <label>显示自动保存状态</label>
                     <div><input type="checkbox" id="autoSaveShowStatus" checked></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>本地存储</label>
+                    <span id="storageStatus" style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;">检查中...</span>
                 </div>
                 
                 <!-- 数据管理 -->
@@ -459,6 +505,131 @@
             return '';
         }
 
+        // ---------- 富文本内容处理 ----------
+        const ALLOWED_TAGS = new Set(['P','DIV','BR','H1','H2','H3','STRONG','B','EM','I','U','S','STRIKE','UL','OL','LI','BLOCKQUOTE','PRE','CODE','SPAN']);
+        const ALLOWED_STYLES = new Set(['color','background-color','text-align','font-size','font-weight','font-style','text-decoration','padding-left','margin-left']);
+
+        function sanitizeNode(node) {
+            const children = Array.from(node.childNodes);
+            for (const child of children) {
+                if (child.nodeType === Node.TEXT_NODE) continue;
+                if (child.nodeType !== Node.ELEMENT_NODE) { child.remove(); continue; }
+                if (!ALLOWED_TAGS.has(child.tagName)) {
+                    sanitizeNode(child);
+                    while (child.firstChild) node.insertBefore(child.firstChild, child);
+                    child.remove();
+                    continue;
+                }
+                for (const attr of Array.from(child.attributes)) {
+                    if (attr.name.toLowerCase() === 'style') {
+                        const safe = attr.value.split(';').map(s => s.trim()).filter(Boolean).filter(decl => {
+                            const prop = decl.split(':')[0].trim().toLowerCase();
+                            return ALLOWED_STYLES.has(prop);
+                        }).join('; ');
+                        if (safe) child.setAttribute('style', safe); else child.removeAttribute('style');
+                    } else {
+                        child.removeAttribute(attr.name);
+                    }
+                }
+                sanitizeNode(child);
+            }
+        }
+
+        function sanitizeHtml(html) {
+            if (!html) return '';
+            const tpl = document.createElement('template');
+            tpl.innerHTML = String(html);
+            sanitizeNode(tpl.content);
+            return tpl.innerHTML;
+        }
+
+        function plainTextToHtml(text) {
+            const lines = String(text == null ? '' : text).split('\n');
+            return lines.map(line => line.trim() === '' ? '<p><br></p>' : '<p>' + escapeHtml(line) + '</p>').join('');
+        }
+
+        // 将任意存储格式规范为可放入编辑器的 HTML
+        function normalizeToHtml(content) {
+            if (content == null) return '';
+            if (typeof content === 'object') return sanitizeHtml(legacyTiptapToHtml(content));
+            if (typeof content !== 'string') return '';
+            if (!content.trim()) return '';
+            if (/<[a-z][\s\S]*>/i.test(content)) return sanitizeHtml(content);
+            return plainTextToHtml(content);
+        }
+
+        // 富文本 HTML -> 纯文本（列表预览 / 搜索 / 导出）
+        function toPlainText(content) {
+            if (content == null) return '';
+            if (typeof content === 'object') return extractText(content);
+            if (typeof content !== 'string') return '';
+            if (!/<[a-z][\s\S]*>/i.test(content)) return content;
+            const div = document.createElement('div');
+            div.innerHTML = content;
+            return (div.textContent || '').replace(/\u00a0/g, ' ');
+        }
+
+        // 旧版 TipTap JSON -> HTML
+        const LEGACY_MARKS = { bold: 'strong', italic: 'em', underline: 'u', strike: 's', code: 'code' };
+
+        function renderLegacyMarks(text, marks) {
+            let html = escapeHtml(text);
+            (marks || []).forEach(m => {
+                if (m.type === 'textStyle' && m.attrs && m.attrs.color) {
+                    html = `<span style="color:${escapeHtml(m.attrs.color)}">${html}</span>`;
+                } else if (m.type === 'highlight' && m.attrs && m.attrs.color) {
+                    html = `<span style="background-color:${escapeHtml(m.attrs.color)}">${html}</span>`;
+                } else if (LEGACY_MARKS[m.type]) {
+                    const tag = LEGACY_MARKS[m.type];
+                    html = `<${tag}>${html}</${tag}>`;
+                }
+            });
+            return html;
+        }
+
+        function legacyBlockStyle(attrs) {
+            let style = '';
+            if (attrs) {
+                if (attrs.textAlign) style += `text-align:${attrs.textAlign};`;
+                if (attrs.indent) style += `padding-left:${attrs.indent * 20}px;`;
+            }
+            return style ? ` style="${style}"` : '';
+        }
+
+        function legacyNodesToHtml(nodes) {
+            return (nodes || []).map(legacyNodeToHtml).join('');
+        }
+
+        function legacyNodeToHtml(node) {
+            if (!node) return '';
+            if (node.type === 'text') return renderLegacyMarks(node.text || '', node.marks);
+            if (node.type === 'hardBreak') return '<br>';
+            if (node.type === 'horizontalRule') return '<p>---</p>';
+            const inner = legacyNodesToHtml(node.content);
+            switch (node.type) {
+                case 'doc': return inner;
+                case 'paragraph': return `<p${legacyBlockStyle(node.attrs)}>${inner || '<br>'}</p>`;
+                case 'heading': {
+                    const level = Math.min(Math.max((node.attrs && node.attrs.level) || 1, 1), 3);
+                    return `<h${level}${legacyBlockStyle(node.attrs)}>${inner || '<br>'}</h${level}>`;
+                }
+                case 'bulletList': return `<ul>${inner}</ul>`;
+                case 'orderedList': return `<ol>${inner}</ol>`;
+                case 'listItem': return `<li>${inner}</li>`;
+                case 'blockquote': return `<blockquote>${inner}</blockquote>`;
+                case 'codeBlock': return `<pre><code>${inner}</code></pre>`;
+                default: return inner;
+            }
+        }
+
+        function legacyTiptapToHtml(doc) {
+            if (!doc || typeof doc !== 'object') return '';
+            if (['doc','paragraph','heading','bulletList','orderedList','blockquote'].includes(doc.type)) {
+                return legacyNodeToHtml(doc);
+            }
+            return plainTextToHtml(extractText(doc));
+        }
+
         // 密码保护相关函数
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
@@ -608,6 +779,8 @@
                 this.editingId = null;
                 this.autoSaveTimer = null;
                 this.lastSavedContent = '';
+                this._savedRange = null;
+                this._draftTimer = null;
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
 
                 this.initElements();
@@ -662,34 +835,75 @@
                     closeClearDataModal: document.getElementById('closeClearDataModal'),
                     cancelClearData: document.getElementById('cancelClearData'),
                     confirmClearData: document.getElementById('confirmClearData'),
-                    plainEditor: document.getElementById('plain-editor'),
+                    richEditor: document.getElementById('rich-editor'),
+                    formatToolbar: document.getElementById('formatToolbar'),
+                    foreColorInput: document.getElementById('foreColorInput'),
+                    hiliteColorInput: document.getElementById('hiliteColorInput'),
+                    storageStatus: document.getElementById('storageStatus'),
                     charCount: document.getElementById('charCount'),
                     lastEditTime: document.getElementById('lastEditTime'),
                 };
             }
 
             _updateCharCount() {
-                const text = this.els.plainEditor.value;
-                const chars = text.length;
-                const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+                const ed = this.els.richEditor;
+                const text = ed.innerText != null ? ed.innerText : ed.textContent;
+                const chars = (text || '').replace(/\n$/, '').length;
+                const trimmed = (text || '').trim();
+                const words = trimmed ? trimmed.split(/\s+/).length : 0;
                 this.els.charCount.textContent = `${chars} 字 · ${words} 词`;
             }
 
             // ---------- 初始化 ----------
             async init() {
                 await this.db.open();
+                try { document.execCommand('styleWithCSS', false, true); } catch (e) {}
+                try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
                 if ('virtualKeyboard' in navigator) {
                     navigator.virtualKeyboard.overlaysContent = false;
                 }
                 this.bindGlobalEvents();
                 this.bindEditorEvents();
+                this.bindPersistenceGuards();
                 this.setupViewport();
                 await this.renderCategories();
                 await this.renderNotes();
                 this.loadSettingsToUI();
                 await this.initTheme();
                 this.updatePasswordStatus();
-                console.log('✅ 仿素记日记（纯文本版）初始化完成');
+                this.requestPersistentStorage();
+                console.log('✅ 仿素记日记（富文本版）初始化完成');
+            }
+
+            // ---------- 数据安全：落盘守卫 ----------
+            bindPersistenceGuards() {
+                const flush = () => {
+                    if (this.autoSaveTimer) { clearTimeout(this.autoSaveTimer); this.autoSaveTimer = null; }
+                    this.flushDraftSync();
+                    if (this.els.editorContainer.classList.contains('active')) this.saveNote(true);
+                };
+                window.addEventListener('pagehide', flush);
+                window.addEventListener('beforeunload', flush);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'hidden') flush();
+                });
+            }
+
+            async requestPersistentStorage() {
+                try {
+                    let persisted = false;
+                    if (navigator.storage && navigator.storage.persisted) {
+                        persisted = await navigator.storage.persisted();
+                    }
+                    if (!persisted && navigator.storage && navigator.storage.persist) {
+                        persisted = await navigator.storage.persist();
+                    }
+                    if (this.els.storageStatus) {
+                        this.els.storageStatus.textContent = persisted ? '已持久化' : '普通（建议定期导出备份）';
+                    }
+                } catch (e) {
+                    if (this.els.storageStatus) this.els.storageStatus.textContent = '未知';
+                }
             }
 
             // ---------- 分类管理 ----------
@@ -833,7 +1047,7 @@
                 const search = this.els.searchInput.value.trim().toLowerCase();
                 if (search) {
                     notes = notes.filter(n => {
-                        const text = (n.title || '').toLowerCase() + ' ' + (normalizeContent(n.content) || '').toLowerCase() + ' ' + ((categoryMap[n.category] || '')).toLowerCase();
+                        const text = (n.title || '').toLowerCase() + ' ' + toPlainText(n.content).toLowerCase() + ' ' + ((categoryMap[n.category] || '')).toLowerCase();
                         return text.includes(search);
                     });
                 }
@@ -850,7 +1064,7 @@
                 notes.forEach(n => {
                     const div = document.createElement('div');
                     div.className = 'note-item';
-                    const preview = normalizeContent(n.content).substring(0, 100);
+                    const preview = toPlainText(n.content).substring(0, 100);
                     const categoryName = categoryMap[n.category] || '未分类';
                     div.innerHTML = `
                         <div class="note-title">${escapeHtml(n.title || '未命名')}</div>
@@ -867,7 +1081,7 @@
                 this.els.notesList.scrollTop = prevScrollTop;
             }
 
-            // ---------- 编辑器（纯文本） ----------
+            // ---------- 编辑器（富文本 / contenteditable） ----------
             bindEditorEvents() {
                 this.els.timestampBtn.addEventListener('click', () => {
                     const visible = this.els.timestampToolbar.style.display === 'flex';
@@ -878,10 +1092,152 @@
                     if (btn) this.handleTimestampInsert(btn.dataset.format);
                 });
 
-                this.els.plainEditor.addEventListener('input', () => {
+                const ed = this.els.richEditor;
+                ed.addEventListener('input', () => {
                     this.triggerAutoSave();
                     this._updateCharCount();
                 });
+                // 粘贴一律转为纯文本
+                ed.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    if (text) document.execCommand('insertText', false, text);
+                    this.triggerAutoSave();
+                    this._updateCharCount();
+                });
+
+                // 工具栏：用 mousedown 阻止默认，保住编辑器选区
+                this.els.formatToolbar.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('.fmt-btn')) e.preventDefault();
+                });
+                this.els.formatToolbar.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-cmd],[data-block]');
+                    if (!btn) return;
+                    if (btn.dataset.cmd) this.exec(btn.dataset.cmd);
+                    else if (btn.dataset.block) this.exec('formatBlock', `<${btn.dataset.block}>`);
+                });
+                this.els.foreColorInput.addEventListener('change', (e) => this.applyColor('fore', e.target.value));
+                this.els.hiliteColorInput.addEventListener('change', (e) => this.applyColor('hilite', e.target.value));
+
+                document.addEventListener('selectionchange', () => {
+                    if (this.els.editorContainer.classList.contains('active')) this.saveSelection();
+                });
+            }
+
+            saveSelection() {
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount) {
+                    const range = sel.getRangeAt(0);
+                    if (this.els.richEditor.contains(range.commonAncestorContainer)) {
+                        this._savedRange = range.cloneRange();
+                    }
+                }
+            }
+
+            restoreSelection() {
+                const sel = window.getSelection();
+                if (this._savedRange && this.els.richEditor.contains(this._savedRange.commonAncestorContainer)) {
+                    sel.removeAllRanges();
+                    sel.addRange(this._savedRange);
+                    return true;
+                }
+                return false;
+            }
+
+            exec(cmd, value = null) {
+                const ed = this.els.richEditor;
+                ed.focus();
+                try { document.execCommand('styleWithCSS', false, true); } catch (e) {}
+                if (!this.restoreSelection()) {
+                    const range = document.createRange();
+                    range.selectNodeContents(ed);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+                document.execCommand(cmd, false, value);
+                this.saveSelection();
+                this.triggerAutoSave();
+                this._updateCharCount();
+                this.updateToolbarState();
+            }
+
+            applyColor(kind, color) {
+                let cmd = 'foreColor';
+                if (kind === 'hilite') {
+                    cmd = (document.queryCommandSupported && document.queryCommandSupported('hiliteColor')) ? 'hiliteColor' : 'backColor';
+                }
+                this.exec(cmd, color);
+            }
+
+            updateToolbarState() {
+                const checks = ['bold','italic','underline','strikeThrough'];
+                this.els.formatToolbar.querySelectorAll('[data-cmd]').forEach(btn => {
+                    if (!checks.includes(btn.dataset.cmd)) return;
+                    let on = false;
+                    try { on = document.queryCommandState(btn.dataset.cmd); } catch (e) {}
+                    btn.classList.toggle('active', on);
+                });
+            }
+
+            // 取当前编辑器内容（HTML，空则返回空串）
+            getEditorHtml() {
+                const ed = this.els.richEditor;
+                const plain = ed.innerText != null ? ed.innerText : ed.textContent;
+                if (!(plain || '').trim()) return '';
+                return sanitizeHtml(ed.innerHTML);
+            }
+
+            setEditorHtml(html) {
+                this.els.richEditor.innerHTML = html || '';
+            }
+
+            // ---------- 应急草稿（防止刷新/更新丢字） ----------
+            _draftKeyFor(id) { return 'simpleNotesDraft:' + (id || 'new'); }
+
+            writeDraft() {
+                try {
+                    localStorage.setItem(this._draftKeyFor(this.editingId), JSON.stringify({
+                        title: this.els.noteTitleInput.value,
+                        content: this.getEditorHtml(),
+                        time: Date.now()
+                    }));
+                } catch (e) {}
+            }
+
+            flushDraftSync() {
+                if (!this.els.editorContainer.classList.contains('active')) return;
+                if (this.getEditorHtml() === this.lastSavedContent) return;
+                clearTimeout(this._draftTimer);
+                this._draftTimer = null;
+                this.writeDraft();
+            }
+
+            clearDraft(id) {
+                try { localStorage.removeItem(this._draftKeyFor(id)); } catch (e) {}
+            }
+
+            scheduleDraft() {
+                if (this._draftTimer) return;
+                this._draftTimer = setTimeout(() => { this._draftTimer = null; this.writeDraft(); }, 800);
+            }
+
+            async maybeRestoreDraft(id, savedUpdatedAt) {
+                let draft = null;
+                try { draft = JSON.parse(localStorage.getItem(this._draftKeyFor(id)) || 'null'); } catch (e) { draft = null; }
+                if (!draft || !draft.content) return;
+                const base = savedUpdatedAt ? Date.parse(savedUpdatedAt) : 0;
+                if (!(draft.time > base + 1000)) { this.clearDraft(id); return; }
+                const restore = await this.showConfirm('发现未保存的草稿，是否恢复？', { okText: '恢复草稿', cancelText: '丢弃' });
+                if (restore) {
+                    if (draft.title) this.els.noteTitleInput.value = draft.title;
+                    this.setEditorHtml(normalizeToHtml(draft.content));
+                    this._updateCharCount();
+                    this.triggerAutoSave();
+                } else {
+                    this.clearDraft(id);
+                }
             }
 
             async openEditor(id = null) {
@@ -898,20 +1254,23 @@
                 let title = '';
                 let category = 'daily';
                 let content = '';
+                let savedUpdatedAt = null;
 
                 if (id) {
                     const note = await this.db.getNote(id);
                     if (note) {
                         title = note.title || '';
-                        content = normalizeContent(note.content);
+                        content = note.content;
                         category = note.category || category;
+                        savedUpdatedAt = note.updatedAt;
                     }
                 }
 
                 this.els.noteTitleInput.value = title;
                 this.els.categorySelect.value = category;
-                this.els.plainEditor.value = content;
-                this.lastSavedContent = content;
+                this.setEditorHtml(id ? normalizeToHtml(content) : '');
+                this._savedRange = null;
+                this.lastSavedContent = this.getEditorHtml();
                 this._updateCharCount();
                 if (id) {
                     this.els.lastEditTime.textContent = new Date().toLocaleString('zh-CN');
@@ -919,23 +1278,28 @@
                     this.els.lastEditTime.textContent = '';
                 }
 
-                setTimeout(() => this.els.plainEditor.focus(), 300);
+                await this.maybeRestoreDraft(id, savedUpdatedAt);
+                setTimeout(() => this.els.richEditor.focus(), 300);
             }
 
             closeEditor(shouldSave = true) {
                 if (shouldSave) {
                     const title = this.els.noteTitleInput.value.trim();
-                    const content = this.els.plainEditor.value.trim();
+                    const content = this.getEditorHtml();
                     if (!this.editingId && !title && !content) {
                         shouldSave = false;
                     }
                     if (shouldSave) this.saveNote(true);
+                    else this.clearDraft(this.editingId);
                 }
                 this.els.editorContainer.classList.remove('active');
                 document.body.classList.remove('editor-open');
                 clearTimeout(this.autoSaveTimer);
                 this.autoSaveTimer = null;
+                clearTimeout(this._draftTimer);
+                this._draftTimer = null;
                 this.editingId = null;
+                this._savedRange = null;
                 this.els.timestampToolbar.style.display = 'none';
                 const scrollY = parseInt(document.body.style.top || '0') * -1;
                 document.body.style.position = '';
@@ -944,12 +1308,13 @@
                 document.body.style.right = '';
                 document.body.style.width = '';
                 window.scrollTo(0, scrollY);
+                if (this.pendingUpdate) { this.pendingUpdate = false; location.reload(); }
             }
 
             async saveNote(force = false) {
                 const title = this.els.noteTitleInput.value.trim() || '未命名笔记';
                 const category = this.els.categorySelect.value;
-                const content = this.els.plainEditor.value;
+                const content = this.getEditorHtml();
 
                 if (!force && content === this.lastSavedContent) return;
 
@@ -965,6 +1330,8 @@
                     await this.db.saveNote(noteData);
                     this.lastSavedContent = content;
                     if (!this.editingId) this.editingId = noteData.id;
+                    this.clearDraft(noteData.id);
+                    this.clearDraft('new');
                     this.els.autoSaveStatus.textContent = '已保存';
                     this.els.autoSaveStatus.classList.add('show');
                     this.els.lastEditTime.textContent = new Date().toLocaleString('zh-CN');
@@ -980,6 +1347,7 @@
             async deleteNote() {
                 if (!this.editingId) { this.closeEditor(false); return; }
                 if (await this.showConfirm('确定删除此笔记？', { okText: '删除', danger: true })) {
+                    this.clearDraft(this.editingId);
                     await this.db.deleteNote(this.editingId);
                     this.renderNotes();
                     this.closeEditor(false);
@@ -991,6 +1359,7 @@
                 this.els.autoSaveStatus.textContent = '编辑中...';
                 this.els.autoSaveStatus.classList.add('show');
                 this.autoSaveTimer = setTimeout(() => this.saveNote(), this.settings.autoSaveInterval);
+                this.scheduleDraft();
             }
 
             // ---------- 时间戳 ----------
@@ -1005,14 +1374,7 @@
 
             insertTimestamp(format) {
                 const timestamp = this.formatTimestamp(new Date(), this.getTimestampFormat(format));
-                const plain = this.els.plainEditor;
-                const start = plain.selectionStart;
-                const end = plain.selectionEnd;
-                const val = plain.value;
-                plain.value = val.substring(0, start) + timestamp + val.substring(end);
-                plain.setSelectionRange(start + timestamp.length, start + timestamp.length);
-                plain.focus();
-                this.triggerAutoSave();
+                this.exec('insertText', timestamp);
                 this.els.timestampToolbar.style.display = 'none';
             }
 
@@ -1070,7 +1432,7 @@
                     let md = `# 仿素记日记 - 笔记导出\n\n- **导出时间**: ${this.formatTimestamp(new Date(), 'YYYY年MM月DD日 HH:mm:ss')}\n- **笔记总数**: ${notes.length}\n\n---\n\n`;
                     notes.forEach((n, i) => {
                         const cat = categories.find(c => c.id === n.category);
-                        const contentText = normalizeContent(n.content);
+                        const contentText = toPlainText(n.content);
                         md += `## 笔记 ${i+1}: ${n.title}\n\n- **分类**: ${cat ? cat.name : n.category}\n- **更新**: ${this.formatTimestamp(new Date(n.updatedAt), 'YYYY年MM月DD日 HH:mm:ss')}\n\n---\n\n${contentText}\n\n---\n\n`;
                     });
                     this.downloadContent(md, `仿素记日记_${dateStr}.md`, 'text/markdown');
@@ -1133,7 +1495,7 @@
                             const newNote = {
                                 id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' + count,
                                 title: note.title || '未命名笔记',
-                                content: normalizeContent(note.content),
+                                content: (note.content === undefined || note.content === null) ? '' : note.content,
                                 category: categoryIdMap[note.category] || note.category || 'daily',
                                 createdAt: note.createdAt || new Date().toISOString(),
                                 updatedAt: note.updatedAt || new Date().toISOString()
@@ -1531,7 +1893,17 @@
         });
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) { refreshing = true; location.reload(); }
+          if (refreshing) return;
+          // 更新前先落盘，避免编辑中的文字丢失
+          if (window.app && window.app.flushDraftSync) window.app.flushDraftSync();
+          const editing = window.app && window.app.els && window.app.els.editorContainer.classList.contains('active');
+          if (editing) {
+            window.app.pendingUpdate = true;
+            if (window.app.showToast) window.app.showToast('有新版本，关闭编辑器后自动更新', 'info', 3000);
+            return;
+          }
+          refreshing = true;
+          location.reload();
         });
       }
     </script>    

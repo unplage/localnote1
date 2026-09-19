@@ -6,16 +6,17 @@
 const BASE_PATH = self.location.pathname.replace(/[^/]+$/, '');
 // 构建带项目标识的缓存名称，避免多项目冲突
 // 例如 '/pwa1/' -> 'pwa-cache-pwa1-v1'
-const CACHE_NAME = `pwa-cache${BASE_PATH.replace(/\//g, '-')}v2`;
+const CACHE_NAME = `pwa-cache${BASE_PATH.replace(/\//g, '-')}v11`;
 
 // 预缓存资源列表（全部使用相对于当前 sw.js 的路径）
 const PRECACHE_URLS = [
-  BASE_PATH,                 // 例如 '/pwa1/'
+  `${BASE_PATH}sw.js`,
   `${BASE_PATH}index.html`,
   `${BASE_PATH}manifest.json`,
-  // 如果有图标，可以追加，例如：
-  // `${BASE_PATH}favicon.ico`,
-  // `${BASE_PATH}logo192.png`,
+  `${BASE_PATH}fontawesome.min.css`,
+  `${BASE_PATH}webfonts/fa-solid-900.woff2`,
+  `${BASE_PATH}webfonts/fa-regular-400.woff2`,
+  `${BASE_PATH}webfonts/fa-brands-400.woff2`,
 ];
 
 // 静态资源扩展名（用于判断是否缓存优先）
@@ -53,15 +54,14 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(cache => {
-          // 只删除以 'pwa-cache-' 开头且不属于当前项目的缓存
-          if (cache.startsWith('pwa-cache-') && cache !== CACHE_NAME) {
+        cacheNames
+          .filter(cache => cache.startsWith('pwa-cache-') && cache !== CACHE_NAME)
+          .map(cache => {
             console.log('[SW] 删除旧缓存:', cache);
             return caches.delete(cache);
-          }
-        })
+          })
       );
-    }).then(() => self.clients.claim()) // 立即控制所有页面
+    }).then(() => self.clients.claim())
   );
 });
 
@@ -128,4 +128,11 @@ self.addEventListener('fetch', (event) => {
 
   // ----- 5.3 其他请求（如 API）默认不缓存，直接走网络 -----
   // （业务数据通常存储在 IndexedDB 中，不受影响）
+});
+
+// ---------- 6. 消息处理 ----------
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

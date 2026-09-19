@@ -4,7 +4,7 @@
     "description": "一个功能强大的本地笔记本 PWA 应用",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#f5f5f5",
+    "background_color": "#5D5CDE",
     "theme_color": "#5D5CDE",
     "orientation": "portrait",
     "scope": ".",

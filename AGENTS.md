@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Zero-build PWA note app. Everything is in `index.html` (~1200 lines of inline HTML/CSS/JS). No npm, no bundler, no transpilation.
+Zero-build PWA note app. Everything is in `index.html` (~1900 lines of inline HTML/CSS/JS). No npm, no bundler, no transpilation.
 
 ## Key Files
 
@@ -10,7 +10,7 @@ Zero-build PWA note app. Everything is in `index.html` (~1200 lines of inline HT
 - `sw.js` — Service Worker. Network-first for HTML, cache-first for static assets. Dynamically scopes by subpath for GitHub Pages multi-project isolation.
 - `manifest.json` — PWA manifest with inline SVG data-URIs for icons.
 - `clear.html` — Standalone cache-clearing utility page.
-- `android/` — Android WebView wrapper. Built via `android/build.sh` (requires local Android SDK/JDK, not automated in CI).
+- `android/` — Android WebView wrapper. Built via `android/build.sh` (requires local Android SDK/JDK, not automated in CI). `android/app/src/main/assets/` is a **manual copy** of the web files (`index.html`, `sw.js`, `manifest.json`, `clear.html`, `fontawesome.min.css`, `webfonts/`); keep it in sync when editing the app.
 
 ## Dev Workflow
 
@@ -25,15 +25,18 @@ No build step. No lint/test/typecheck commands exist.
 
 - Data layer: IndexedDB (`SimpleNotesDB` v2) with three object stores: `notes`, `categories`, `settings`.
 - Categories have an `order` field for sort; `getAllCategories()` auto-assigns `order` if missing.
-- Note content is plain text (strings). Legacy rich-text JSON is handled by `extractText()`/`normalizeContent()` compat helpers.
+- Editor is a zero-dependency `contenteditable` (`#rich-editor`) with a toolbar; formatting uses `document.execCommand`. No editor library and no CDN, so rich text works fully offline (including Android WebView).
+- Note `content` is stored as sanitized HTML. Plain-text and legacy TipTap JSON are normalized on read via `normalizeToHtml()` / `legacyTiptapToHtml()`; use `toPlainText()` for previews, search and Markdown export. `sanitizeHtml()` strips disallowed tags/attributes.
+- Data-loss guards: per-note emergency draft in `localStorage` (`simpleNotesDraft:<id>`) written on input and flushed on `pagehide`/`visibilitychange`; SW `controllerchange` defers reload while the editor is open; `navigator.storage.persist()` is requested on init.
 - Note IDs: `Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)`.
 - Auto-save uses a configurable timer (default 3s), triggered on editor `input` events.
 - Dark theme toggled via `data-theme="dark"` on `<html>`.
-- External dependency: Font Awesome 6.4.0 from CDN (only used for icons).
+- Icons: Font Awesome 6.4.0 is vendored locally (`fontawesome.min.css` + `webfonts/`), not loaded from a CDN.
+
 
 ## Gotchas
 
 - Editing the app means editing `index.html` — there is no separate JS/CSS file to modify.
 - The Android build script (`android/build.sh`) has hardcoded absolute paths to a specific developer's SDK install; it won't work as-is elsewhere.
 - Service Worker caches aggressively. After changes, use `clear.html` or hard-refresh to see updates.
-- The `sw.js` cache name is derived from the subpath (`pwa-cache-<path>-v2`); changing the deployment path changes the cache key.
+- The `sw.js` cache name is derived from the subpath (`pwa-cache-<path>-vN`); changing the deployment path changes the cache key. Bump `N` after editing app files to force an update.

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>仿素记日记</title>
     <link rel="manifest" href="./manifest.json">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./fontawesome.min.css">
     <style>
         /* ===== 全局重置 & 变量 ===== */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
@@ -52,8 +52,21 @@
         .title-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
         .note-title-input{width:100%;font-size:22px;font-weight:600;border:none;outline:none;background:transparent;color:var(--text-primary);margin-bottom:0;flex:1;min-width:0}
         .category-select{width:auto;max-width:120px;padding:6px 10px;font-size:14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--card-color);color:var(--text-primary)}
-        #plain-editor{width:100%;height:100%;font-size:16px;line-height:1.6;padding:12px;border:none;resize:none;outline:none;background:transparent;color:var(--text-primary);font-family:inherit;flex:1}
-        #plain-editor:focus{outline:none}
+        .format-toolbar{display:flex;gap:4px;overflow-x:auto;padding:6px 2px;border-bottom:1px solid var(--border-color);flex-shrink:0;scrollbar-width:none;align-items:center}
+        .format-toolbar::-webkit-scrollbar{display:none}
+        .fmt-btn{flex:0 0 auto;width:34px;height:34px;border:none;background:transparent;color:var(--text-secondary);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .fmt-btn:active,.fmt-btn.active{background:rgba(93,92,222,0.15);color:var(--primary-color)}
+        .fmt-sep{flex:0 0 auto;width:1px;height:22px;background:var(--border-color);margin:0 4px}
+        .fmt-color{flex:0 0 auto;width:34px;height:34px;padding:0;border:none;background:transparent;cursor:pointer}
+        .rich-editor{width:100%;font-size:16px;line-height:1.6;padding:12px;border:none;resize:none;outline:none;background:transparent;color:var(--text-primary);font-family:inherit;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;word-break:break-word}
+        .rich-editor:focus{outline:none}
+        .rich-editor:empty::before{content:attr(data-placeholder);color:var(--text-secondary);pointer-events:none}
+        .rich-editor h1{font-size:1.6em;font-weight:700;margin:.4em 0}
+        .rich-editor h2{font-size:1.35em;font-weight:700;margin:.4em 0}
+        .rich-editor h3{font-size:1.15em;font-weight:700;margin:.4em 0}
+        .rich-editor blockquote{border-left:3px solid var(--primary-color);margin:.4em 0;padding-left:12px;color:var(--text-secondary)}
+        .rich-editor pre{background:rgba(127,127,127,0.12);border-radius:var(--radius-sm);padding:10px;overflow-x:auto;font-family:monospace;white-space:pre-wrap}
+        .rich-editor ul,.rich-editor ol{padding-left:24px;margin:.3em 0}
         .timestamp-toolbar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
         .timestamp-btn{padding:6px 12px;background:rgba(93,92,222,0.1);border:1px solid rgba(93,92,222,0.2);border-radius:var(--radius-sm);color:var(--primary-color);font-size:13px;cursor:pointer}
         .timestamp-btn:hover{background:rgba(93,92,222,0.2)}
@@ -64,7 +77,6 @@
         .export-section{margin-top:20px;background:var(--card-color);padding:16px;border-radius:var(--radius);box-shadow:var(--shadow)}
         .export-section button{width:100%;padding:12px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
         .export-section button:last-child{margin-bottom:0}
-        .settings-section{margin-top:20px;background:var(--card-color);padding:16px;border-radius:var(--radius);box-shadow:var(--shadow)}
         /* ===== 模态框 ===== */
         .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all 0.3s}
         .modal-overlay.active{opacity:1;visibility:visible}
@@ -82,6 +94,28 @@
         /* ===== 响应式 ===== */
         @media (max-width:480px){.container{padding:0 12px}.header{padding:12px 0}.logo{font-size:20px}}
         [data-theme="dark"] .search-box{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23AAAAAA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E")}
+        /* ===== Toast 通知 ===== */
+        .toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+        .toast{padding:10px 20px;border-radius:var(--radius-sm);color:white;font-size:14px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;transform:translateY(-10px);transition:all 0.3s ease;pointer-events:auto;max-width:90vw;text-align:center}
+        .toast.show{opacity:1;transform:translateY(0)}
+        .toast.success{background:#34C759}
+        .toast.error{background:#FF3B30}
+        .toast.info{background:var(--primary-color)}
+        /* ===== 确认弹窗 ===== */
+        .confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all 0.3s}
+        .confirm-overlay.active{opacity:1;visibility:visible}
+        .confirm-box{background:var(--card-color);border-radius:var(--radius);width:90%;max-width:360px;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.2);transform:scale(0.9);transition:transform 0.3s}
+        .confirm-overlay.active .confirm-box{transform:scale(1)}
+        .confirm-msg{font-size:16px;color:var(--text-primary);margin-bottom:20px;line-height:1.5}
+        .confirm-btns{display:flex;gap:12px;justify-content:center}
+        .confirm-btns button{flex:1;padding:10px;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:500;cursor:pointer}
+        .confirm-btns .c-cancel{background:var(--card-color);border:1px solid var(--border-color);color:var(--text-primary)}
+        .confirm-btns .c-ok{background:var(--primary-color);color:white}
+        .confirm-btns .c-danger{background:var(--danger-color);color:white}
+        /* ===== 字数统计 ===== */
+        .editor-footer{padding:8px 16px;border-top:1px solid var(--border-color);flex-shrink:0;display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)}
+        /* ===== 编辑器打开时隐藏底层内容 ===== */
+        body.editor-open #appContent{visibility:hidden}
     </style>
 </head>
 <body>
@@ -94,8 +128,7 @@
                     <div class="header-actions">
                         <button class="icon-btn" id="searchBtn" title="搜索"><i class="fas fa-search"></i></button>
                         <button class="icon-btn" id="categoryManageBtn" title="管理分类"><i class="fas fa-tags"></i></button>
-                        <button class="icon-btn" id="exportBtn" title="导出/导入"><i class="fas fa-file-export"></i></button>
-                        <button class="icon-btn" id="themeBtn" title="切换主题"><i class="fas fa-moon"></i></button>
+                        <button class="icon-btn" id="settingsBtn" title="设置"><i class="fas fa-cog"></i></button>
                     </div>
                 </div>
             </div>
@@ -108,55 +141,72 @@
                 </div>
                 <div class="categories" id="categories"></div>
                 <div class="notes-list" id="notesList"></div>
-                <!-- 导出面板 -->
-                <div class="export-section" id="exportSection" style="display:none;">
-                    <h3 style="margin-bottom:12px;"><i class="fas fa-file-export"></i> 数据管理</h3>
-                    <button class="lock-btn" id="exportJsonBtn" style="background:var(--text-secondary);">📥 导出 JSON</button>
-                    <button class="lock-btn" id="exportMarkdownBtn" style="background:var(--secondary-color);">📄 导出 Markdown</button>
-                    <button class="lock-btn" id="importJsonBtn" style="background:var(--primary-color);">📤 导入 JSON</button>
-                    <button class="lock-btn" id="clearDataBtn" style="background:var(--danger-color);">🗑️ 清除所有数据</button>
-                </div>
+
                 <!-- 设置面板 -->
-                <div class="settings-section" id="settingsSection" style="display:none;">
-                    <h3><i class="fas fa-cog"></i> 设置</h3>
-                    <div style="display:flex;justify-content:space-between;padding:8px 0;">
-                        <label>自动保存间隔（秒）</label>
-                        <div><input type="number" id="autoSaveIntervalInput" value="3" min="1" max="300" style="width:60px;padding:4px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"> 秒</div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;padding:8px 0;">
-                        <label>显示自动保存状态</label>
-                        <div><input type="checkbox" id="autoSaveShowStatus" checked></div>
-                    </div>
-                </div>
+
             </div>
         </main>
-        <!-- ===== 编辑器浮层 ===== -->
-        <div class="editor-container" id="editorContainer">
-            <div class="editor-header">
-                <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
-                <div class="auto-save-status" id="autoSaveStatus">已保存</div>
-                <div class="editor-actions">
-                    <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
-                    <button class="icon-btn" id="saveNote" title="保存"><i class="fas fa-check"></i></button>
-                    <button class="icon-btn" id="deleteNote" title="删除"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-            <div class="editor-content">
-                <div class="title-row">
-                    <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
-                    <select class="category-select" id="categorySelect"></select>
-                </div>
-                <textarea id="plain-editor" placeholder="开始记录..."></textarea>
-                <div class="timestamp-toolbar" id="timestampToolbar" style="display:none;">
-                    <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
-                    <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
-                    <button class="timestamp-btn" data-format="time"><i class="fas fa-clock"></i> 时间</button>
-                    <button class="timestamp-btn" data-format="week"><i class="fas fa-calendar-week"></i> 星期</button>
-                    <button class="timestamp-btn" data-format="custom"><i class="fas fa-pen"></i> 自定义格式</button>
-                </div>
+        <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
+    </div>
+
+    <!-- ===== 编辑器浮层（在 appContent 外部，避免被 visibility:hidden 隐藏） ===== -->
+    <div class="editor-container" id="editorContainer">
+        <div class="editor-header">
+            <button class="icon-btn" id="closeEditor"><i class="fas fa-arrow-left"></i></button>
+            <div class="auto-save-status" id="autoSaveStatus">已保存</div>
+            <div class="editor-actions">
+                <button class="icon-btn" id="timestampBtn" title="插入时间戳"><i class="fas fa-clock"></i></button>
+                <button class="icon-btn" id="saveNote" title="保存"><i class="fas fa-check"></i></button>
+                <button class="icon-btn" id="deleteNote" title="删除"><i class="fas fa-trash"></i></button>
             </div>
         </div>
-        <button class="add-button" id="addButton"><i class="fas fa-plus"></i></button>
+        <div class="editor-content">
+            <div class="title-row">
+                <input type="text" class="note-title-input" id="noteTitleInput" placeholder="标题">
+                <select class="category-select" id="categorySelect"></select>
+            </div>
+            <div class="format-toolbar" id="formatToolbar">
+                <button type="button" class="fmt-btn" data-cmd="undo" title="撤销"><i class="fas fa-rotate-left"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="redo" title="重做"><i class="fas fa-rotate-right"></i></button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-block="p" title="正文">正文</button>
+                <button type="button" class="fmt-btn" data-block="h1" title="标题1">H1</button>
+                <button type="button" class="fmt-btn" data-block="h2" title="标题2">H2</button>
+                <button type="button" class="fmt-btn" data-block="h3" title="标题3">H3</button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="bold" title="加粗"><i class="fas fa-bold"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="italic" title="斜体"><i class="fas fa-italic"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="underline" title="下划线"><i class="fas fa-underline"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="strikeThrough" title="删除线"><i class="fas fa-strikethrough"></i></button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="insertUnorderedList" title="无序列表"><i class="fas fa-list-ul"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="insertOrderedList" title="有序列表"><i class="fas fa-list-ol"></i></button>
+                <button type="button" class="fmt-btn" data-block="blockquote" title="引用"><i class="fas fa-quote-left"></i></button>
+                <button type="button" class="fmt-btn" data-block="pre" title="代码块"><i class="fas fa-code"></i></button>
+                <span class="fmt-sep"></span>
+                <input type="color" class="fmt-color" id="foreColorInput" value="#333333" title="文字颜色">
+                <input type="color" class="fmt-color" id="hiliteColorInput" value="#FFFF00" title="高亮颜色">
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="justifyLeft" title="左对齐"><i class="fas fa-align-left"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="justifyCenter" title="居中"><i class="fas fa-align-center"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="justifyRight" title="右对齐"><i class="fas fa-align-right"></i></button>
+                <span class="fmt-sep"></span>
+                <button type="button" class="fmt-btn" data-cmd="outdent" title="减少缩进"><i class="fas fa-outdent"></i></button>
+                <button type="button" class="fmt-btn" data-cmd="indent" title="增加缩进"><i class="fas fa-indent"></i></button>
+            </div>
+            <div id="rich-editor" class="rich-editor" contenteditable="true" data-placeholder="开始记录..."></div>
+            <div class="timestamp-toolbar" id="timestampToolbar" style="display:none;">
+                <button class="timestamp-btn" data-format="datetime"><i class="fas fa-calendar-alt"></i> 日期时间</button>
+                <button class="timestamp-btn" data-format="date"><i class="fas fa-calendar-day"></i> 日期</button>
+                <button class="timestamp-btn" data-format="time"><i class="fas fa-clock"></i> 时间</button>
+                <button class="timestamp-btn" data-format="week"><i class="fas fa-calendar-week"></i> 星期</button>
+                <button class="timestamp-btn" data-format="custom"><i class="fas fa-pen"></i> 自定义格式</button>
+            </div>
+        </div>
+        <div class="editor-footer" id="editorFooter">
+            <span id="charCount">0 字</span>
+            <span id="lastEditTime"></span>
+        </div>
     </div>
 
     <!-- ===== 模态框：分类管理 ===== -->
@@ -219,6 +269,74 @@
                 <button class="modal-btn secondary" id="cancelClearData">取消</button>
                 <button class="modal-btn danger" id="confirmClearData">清除所有数据</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== 模态框：设置 ===== -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header"><h3><i class="fas fa-cog"></i> 设置</h3><button class="modal-close" id="closeSettingsModal"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <!-- 主题颜色 -->
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>主题颜色</label>
+                    <div>
+                        <label style="margin-right:8px;"><input type="radio" name="themeOption" value="light"> 浅色</label>
+                        <label style="margin-right:8px;"><input type="radio" name="themeOption" value="dark"> 深色</label>
+                        <label><input type="radio" name="themeOption" value="auto"> 自动</label>
+                    </div>
+                </div>
+                
+                <!-- 自动保存 -->
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>自动保存间隔（秒）</label>
+                    <div><input type="number" id="autoSaveIntervalInput" value="3" min="1" max="300" style="width:60px;padding:4px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);"> 秒</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>显示自动保存状态</label>
+                    <div><input type="checkbox" id="autoSaveShowStatus" checked></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>本地存储</label>
+                    <span id="storageStatus" style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;">检查中...</span>
+                </div>
+                
+                <!-- 数据管理 -->
+                <h3 style="margin-top:16px;margin-bottom:8px;"><i class="fas fa-file-export"></i> 数据管理</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <button class="lock-btn" id="exportJsonBtn" style="background:var(--text-secondary);">📥 导出 JSON</button>
+                    <button class="lock-btn" id="exportMarkdownBtn" style="background:var(--secondary-color);">📄 导出 Markdown</button>
+                    <button class="lock-btn" id="importJsonBtn" style="background:var(--primary-color);">📤 导入 JSON</button>
+                    <button class="lock-btn" id="clearDataBtn" style="background:var(--danger-color);">🗑️ 清除所有数据</button>
+                </div>
+                
+                <!-- 密码保护 -->
+                <h3 style="margin-top:16px;margin-bottom:8px;"><i class="fas fa-lock"></i> 密码保护</h3>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>设置密码</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="password" id="appPassword" placeholder="输入密码" style="width:120px;padding:4px;border:1px solid var(--border-color);border-radius:4px;background:var(--card-color);color:var(--text-primary);">
+                        <button class="lock-btn" id="setPasswordBtn" style="background:var(--primary-color);">设置</button>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <label>清除密码</label>
+                    <div style="display:flex;gap:8px;">
+                        <button class="lock-btn" id="clearPasswordBtn" style="background:var(--danger-color);">清除</button>
+                        <span id="passwordStatus" style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Toast 通知 ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+    <!-- ===== 确认弹窗 ===== -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <div class="confirm-msg" id="confirmMsg"></div>
+            <div class="confirm-btns" id="confirmBtns"></div>
         </div>
     </div>
 
@@ -387,6 +505,245 @@
             return '';
         }
 
+        // ---------- 富文本内容处理 ----------
+        const ALLOWED_TAGS = new Set(['P','DIV','BR','H1','H2','H3','STRONG','B','EM','I','U','S','STRIKE','UL','OL','LI','BLOCKQUOTE','PRE','CODE','SPAN']);
+        const ALLOWED_STYLES = new Set(['color','background-color','text-align','font-size','font-weight','font-style','text-decoration','padding-left','margin-left']);
+
+        function sanitizeNode(node) {
+            const children = Array.from(node.childNodes);
+            for (const child of children) {
+                if (child.nodeType === Node.TEXT_NODE) continue;
+                if (child.nodeType !== Node.ELEMENT_NODE) { child.remove(); continue; }
+                if (!ALLOWED_TAGS.has(child.tagName)) {
+                    sanitizeNode(child);
+                    while (child.firstChild) node.insertBefore(child.firstChild, child);
+                    child.remove();
+                    continue;
+                }
+                for (const attr of Array.from(child.attributes)) {
+                    if (attr.name.toLowerCase() === 'style') {
+                        const safe = attr.value.split(';').map(s => s.trim()).filter(Boolean).filter(decl => {
+                            const prop = decl.split(':')[0].trim().toLowerCase();
+                            return ALLOWED_STYLES.has(prop);
+                        }).join('; ');
+                        if (safe) child.setAttribute('style', safe); else child.removeAttribute('style');
+                    } else {
+                        child.removeAttribute(attr.name);
+                    }
+                }
+                sanitizeNode(child);
+            }
+        }
+
+        function sanitizeHtml(html) {
+            if (!html) return '';
+            const tpl = document.createElement('template');
+            tpl.innerHTML = String(html);
+            sanitizeNode(tpl.content);
+            return tpl.innerHTML;
+        }
+
+        function plainTextToHtml(text) {
+            const lines = String(text == null ? '' : text).split('\n');
+            return lines.map(line => line.trim() === '' ? '<p><br></p>' : '<p>' + escapeHtml(line) + '</p>').join('');
+        }
+
+        // 将任意存储格式规范为可放入编辑器的 HTML
+        function normalizeToHtml(content) {
+            if (content == null) return '';
+            if (typeof content === 'object') return sanitizeHtml(legacyTiptapToHtml(content));
+            if (typeof content !== 'string') return '';
+            if (!content.trim()) return '';
+            if (/<[a-z][\s\S]*>/i.test(content)) return sanitizeHtml(content);
+            return plainTextToHtml(content);
+        }
+
+        // 富文本 HTML -> 纯文本（列表预览 / 搜索 / 导出）
+        function toPlainText(content) {
+            if (content == null) return '';
+            if (typeof content === 'object') return extractText(content);
+            if (typeof content !== 'string') return '';
+            if (!/<[a-z][\s\S]*>/i.test(content)) return content;
+            const div = document.createElement('div');
+            div.innerHTML = content;
+            return (div.textContent || '').replace(/\u00a0/g, ' ');
+        }
+
+        // 旧版 TipTap JSON -> HTML
+        const LEGACY_MARKS = { bold: 'strong', italic: 'em', underline: 'u', strike: 's', code: 'code' };
+
+        function renderLegacyMarks(text, marks) {
+            let html = escapeHtml(text);
+            (marks || []).forEach(m => {
+                if (m.type === 'textStyle' && m.attrs && m.attrs.color) {
+                    html = `<span style="color:${escapeHtml(m.attrs.color)}">${html}</span>`;
+                } else if (m.type === 'highlight' && m.attrs && m.attrs.color) {
+                    html = `<span style="background-color:${escapeHtml(m.attrs.color)}">${html}</span>`;
+                } else if (LEGACY_MARKS[m.type]) {
+                    const tag = LEGACY_MARKS[m.type];
+                    html = `<${tag}>${html}</${tag}>`;
+                }
+            });
+            return html;
+        }
+
+        function legacyBlockStyle(attrs) {
+            let style = '';
+            if (attrs) {
+                if (attrs.textAlign) style += `text-align:${attrs.textAlign};`;
+                if (attrs.indent) style += `padding-left:${attrs.indent * 20}px;`;
+            }
+            return style ? ` style="${style}"` : '';
+        }
+
+        function legacyNodesToHtml(nodes) {
+            return (nodes || []).map(legacyNodeToHtml).join('');
+        }
+
+        function legacyNodeToHtml(node) {
+            if (!node) return '';
+            if (node.type === 'text') return renderLegacyMarks(node.text || '', node.marks);
+            if (node.type === 'hardBreak') return '<br>';
+            if (node.type === 'horizontalRule') return '<p>---</p>';
+            const inner = legacyNodesToHtml(node.content);
+            switch (node.type) {
+                case 'doc': return inner;
+                case 'paragraph': return `<p${legacyBlockStyle(node.attrs)}>${inner || '<br>'}</p>`;
+                case 'heading': {
+                    const level = Math.min(Math.max((node.attrs && node.attrs.level) || 1, 1), 3);
+                    return `<h${level}${legacyBlockStyle(node.attrs)}>${inner || '<br>'}</h${level}>`;
+                }
+                case 'bulletList': return `<ul>${inner}</ul>`;
+                case 'orderedList': return `<ol>${inner}</ol>`;
+                case 'listItem': return `<li>${inner}</li>`;
+                case 'blockquote': return `<blockquote>${inner}</blockquote>`;
+                case 'codeBlock': return `<pre><code>${inner}</code></pre>`;
+                default: return inner;
+            }
+        }
+
+        function legacyTiptapToHtml(doc) {
+            if (!doc || typeof doc !== 'object') return '';
+            if (['doc','paragraph','heading','bulletList','orderedList','blockquote'].includes(doc.type)) {
+                return legacyNodeToHtml(doc);
+            }
+            return plainTextToHtml(extractText(doc));
+        }
+
+        // 密码保护相关函数
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // 设置密码
+        async function setPassword(password) {
+            const hash = await sha256(password);
+            localStorage.setItem('app_password_hash', hash);
+            // 更新密码状态显示
+            const statusEl = document.getElementById('passwordStatus');
+            if (statusEl) statusEl.textContent = '已设置';
+        }
+        
+        // 清除密码
+        function clearPassword() {
+            localStorage.removeItem('app_password_hash');
+            const statusEl = document.getElementById('passwordStatus');
+            if (statusEl) statusEl.textContent = '未设置';
+        }
+        
+        // 验证密码
+        async function verifyPassword(input) {
+            const storedHash = localStorage.getItem('app_password_hash');
+            if (!storedHash) return true; // 未设置密码，直接通过
+            const inputHash = await sha256(input);
+            return inputHash === storedHash;
+        }
+        
+        // 检查是否需要认证
+        function needsAuth() {
+            return !!localStorage.getItem('app_password_hash');
+        }
+        
+        // 切换密码可见性
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+            } else {
+                input.type = 'password';
+            }
+        }
+        
+        // 处理密码验证
+        async function handleAuth() {
+            const password = document.getElementById('authPassword').value;
+            const errorEl = document.getElementById('authError');
+            
+            if (!password) {
+                errorEl.textContent = '请输入密码';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            const ok = await verifyPassword(password);
+            if (ok) {
+                const overlay = document.getElementById('authOverlay');
+                overlay.style.opacity = '0';
+                overlay.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    overlay.remove();
+                    initApp(); // 继续初始化应用
+                }, 300);
+            } else {
+                errorEl.textContent = '密码错误，请重试';
+                errorEl.style.display = 'block';
+                document.getElementById('authPassword').value = '';
+                document.getElementById('authPassword').focus();
+            }
+        }
+        
+        // 处理设置密码
+        async function handleSetPassword() {
+            const password = document.getElementById('appPassword').value.trim();
+            if (!password) {
+                window.app.showToast('请输入密码', 'error');
+                return;
+            }
+            if (password.length < 4) {
+                window.app.showToast('密码至少4位', 'error');
+                return;
+            }
+            await setPassword(password);
+            window.app.showToast('密码已设置', 'success');
+            document.getElementById('appPassword').value = '';
+        }
+        
+        // 处理清除密码
+        async function handleClearPassword() {
+            if (!needsAuth()) {
+                window.app.showToast('未设置密码', 'info');
+                return;
+            }
+            // 需要验证当前密码
+            const password = prompt('请输入当前密码以确认清除：');
+            if (password === null) return;
+            const ok = await verifyPassword(password);
+            if (ok) {
+                clearPassword();
+                window.app.showToast('密码已清除', 'success');
+            } else {
+                window.app.showToast('密码错误', 'error');
+            }
+        }
+        
+        // 应用初始化（密码验证通过后调用）
+        function initApp() {
+            window.app = new App();
+        }
+
         function formatDate(d) {
             const date = new Date(d);
             const now = new Date();
@@ -404,6 +761,14 @@
             return div.innerHTML;
         }
 
+        function debounce(fn, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
         // ============================================================
         //  3. 应用主类
         // ============================================================
@@ -414,6 +779,8 @@
                 this.editingId = null;
                 this.autoSaveTimer = null;
                 this.lastSavedContent = '';
+                this._savedRange = null;
+                this._draftTimer = null;
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
 
                 this.initElements();
@@ -428,8 +795,7 @@
                     searchContainer: document.getElementById('searchContainer'),
                     searchInput: document.getElementById('searchInput'),
                     clearSearch: document.getElementById('clearSearch'),
-                    exportSection: document.getElementById('exportSection'),
-                    settingsSection: document.getElementById('settingsSection'),
+                    settingsModal: document.getElementById('settingsModal'),
                     editorContainer: document.getElementById('editorContainer'),
                     noteTitleInput: document.getElementById('noteTitleInput'),
                     categorySelect: document.getElementById('categorySelect'),
@@ -442,8 +808,7 @@
                     timestampToolbar: document.getElementById('timestampToolbar'),
                     searchBtn: document.getElementById('searchBtn'),
                     categoryManageBtn: document.getElementById('categoryManageBtn'),
-                    exportBtn: document.getElementById('exportBtn'),
-                    themeBtn: document.getElementById('themeBtn'),
+                    settingsBtn: document.getElementById('settingsBtn'),
                     exportJsonBtn: document.getElementById('exportJsonBtn'),
                     exportMarkdownBtn: document.getElementById('exportMarkdownBtn'),
                     importJsonBtn: document.getElementById('importJsonBtn'),
@@ -470,21 +835,75 @@
                     closeClearDataModal: document.getElementById('closeClearDataModal'),
                     cancelClearData: document.getElementById('cancelClearData'),
                     confirmClearData: document.getElementById('confirmClearData'),
-                    plainEditor: document.getElementById('plain-editor'),
+                    richEditor: document.getElementById('rich-editor'),
+                    formatToolbar: document.getElementById('formatToolbar'),
+                    foreColorInput: document.getElementById('foreColorInput'),
+                    hiliteColorInput: document.getElementById('hiliteColorInput'),
+                    storageStatus: document.getElementById('storageStatus'),
+                    charCount: document.getElementById('charCount'),
+                    lastEditTime: document.getElementById('lastEditTime'),
                 };
+            }
+
+            _updateCharCount() {
+                const ed = this.els.richEditor;
+                const text = ed.innerText != null ? ed.innerText : ed.textContent;
+                const chars = (text || '').replace(/\n$/, '').length;
+                const trimmed = (text || '').trim();
+                const words = trimmed ? trimmed.split(/\s+/).length : 0;
+                this.els.charCount.textContent = `${chars} 字 · ${words} 词`;
             }
 
             // ---------- 初始化 ----------
             async init() {
                 await this.db.open();
+                try { document.execCommand('styleWithCSS', false, true); } catch (e) {}
+                try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
+                if ('virtualKeyboard' in navigator) {
+                    navigator.virtualKeyboard.overlaysContent = false;
+                }
                 this.bindGlobalEvents();
                 this.bindEditorEvents();
+                this.bindPersistenceGuards();
                 this.setupViewport();
                 await this.renderCategories();
                 await this.renderNotes();
                 this.loadSettingsToUI();
-                this.initTheme();
-                console.log('✅ 仿素记日记（纯文本版）初始化完成');
+                await this.initTheme();
+                this.updatePasswordStatus();
+                this.requestPersistentStorage();
+                console.log('✅ 仿素记日记（富文本版）初始化完成');
+            }
+
+            // ---------- 数据安全：落盘守卫 ----------
+            bindPersistenceGuards() {
+                const flush = () => {
+                    if (this.autoSaveTimer) { clearTimeout(this.autoSaveTimer); this.autoSaveTimer = null; }
+                    this.flushDraftSync();
+                    if (this.els.editorContainer.classList.contains('active')) this.saveNote(true);
+                };
+                window.addEventListener('pagehide', flush);
+                window.addEventListener('beforeunload', flush);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'hidden') flush();
+                });
+            }
+
+            async requestPersistentStorage() {
+                try {
+                    let persisted = false;
+                    if (navigator.storage && navigator.storage.persisted) {
+                        persisted = await navigator.storage.persisted();
+                    }
+                    if (!persisted && navigator.storage && navigator.storage.persist) {
+                        persisted = await navigator.storage.persist();
+                    }
+                    if (this.els.storageStatus) {
+                        this.els.storageStatus.textContent = persisted ? '已持久化' : '普通（建议定期导出备份）';
+                    }
+                } catch (e) {
+                    if (this.els.storageStatus) this.els.storageStatus.textContent = '未知';
+                }
             }
 
             // ---------- 分类管理 ----------
@@ -605,7 +1024,7 @@
             }
 
             async deleteCategory(id) {
-                if (!confirm('删除分类会将相关笔记归类到"其他"，确定删除吗？')) return;
+                if (!await this.showConfirm('删除分类会将相关笔记归类到"其他"，确定删除吗？', { okText: '删除', danger: true })) return;
                 const notes = await this.db.getAllNotes();
                 for (let note of notes) {
                     if (note.category === id) {
@@ -628,7 +1047,7 @@
                 const search = this.els.searchInput.value.trim().toLowerCase();
                 if (search) {
                     notes = notes.filter(n => {
-                        const text = (n.title || '').toLowerCase() + ' ' + (normalizeContent(n.content) || '').toLowerCase() + ' ' + ((categoryMap[n.category] || '')).toLowerCase();
+                        const text = (n.title || '').toLowerCase() + ' ' + toPlainText(n.content).toLowerCase() + ' ' + ((categoryMap[n.category] || '')).toLowerCase();
                         return text.includes(search);
                     });
                 }
@@ -645,7 +1064,7 @@
                 notes.forEach(n => {
                     const div = document.createElement('div');
                     div.className = 'note-item';
-                    const preview = normalizeContent(n.content).substring(0, 100);
+                    const preview = toPlainText(n.content).substring(0, 100);
                     const categoryName = categoryMap[n.category] || '未分类';
                     div.innerHTML = `
                         <div class="note-title">${escapeHtml(n.title || '未命名')}</div>
@@ -662,7 +1081,7 @@
                 this.els.notesList.scrollTop = prevScrollTop;
             }
 
-            // ---------- 编辑器（纯文本） ----------
+            // ---------- 编辑器（富文本 / contenteditable） ----------
             bindEditorEvents() {
                 this.els.timestampBtn.addEventListener('click', () => {
                     const visible = this.els.timestampToolbar.style.display === 'flex';
@@ -673,16 +1092,158 @@
                     if (btn) this.handleTimestampInsert(btn.dataset.format);
                 });
 
-                this.els.plainEditor.addEventListener('input', () => {
+                const ed = this.els.richEditor;
+                ed.addEventListener('input', () => {
                     this.triggerAutoSave();
+                    this._updateCharCount();
                 });
+                // 粘贴一律转为纯文本
+                ed.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    if (text) document.execCommand('insertText', false, text);
+                    this.triggerAutoSave();
+                    this._updateCharCount();
+                });
+
+                // 工具栏：用 mousedown 阻止默认，保住编辑器选区
+                this.els.formatToolbar.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('.fmt-btn')) e.preventDefault();
+                });
+                this.els.formatToolbar.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-cmd],[data-block]');
+                    if (!btn) return;
+                    if (btn.dataset.cmd) this.exec(btn.dataset.cmd);
+                    else if (btn.dataset.block) this.exec('formatBlock', `<${btn.dataset.block}>`);
+                });
+                this.els.foreColorInput.addEventListener('change', (e) => this.applyColor('fore', e.target.value));
+                this.els.hiliteColorInput.addEventListener('change', (e) => this.applyColor('hilite', e.target.value));
+
+                document.addEventListener('selectionchange', () => {
+                    if (this.els.editorContainer.classList.contains('active')) this.saveSelection();
+                });
+            }
+
+            saveSelection() {
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount) {
+                    const range = sel.getRangeAt(0);
+                    if (this.els.richEditor.contains(range.commonAncestorContainer)) {
+                        this._savedRange = range.cloneRange();
+                    }
+                }
+            }
+
+            restoreSelection() {
+                const sel = window.getSelection();
+                if (this._savedRange && this.els.richEditor.contains(this._savedRange.commonAncestorContainer)) {
+                    sel.removeAllRanges();
+                    sel.addRange(this._savedRange);
+                    return true;
+                }
+                return false;
+            }
+
+            exec(cmd, value = null) {
+                const ed = this.els.richEditor;
+                ed.focus();
+                try { document.execCommand('styleWithCSS', false, true); } catch (e) {}
+                if (!this.restoreSelection()) {
+                    const range = document.createRange();
+                    range.selectNodeContents(ed);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+                document.execCommand(cmd, false, value);
+                this.saveSelection();
+                this.triggerAutoSave();
+                this._updateCharCount();
+                this.updateToolbarState();
+            }
+
+            applyColor(kind, color) {
+                let cmd = 'foreColor';
+                if (kind === 'hilite') {
+                    cmd = (document.queryCommandSupported && document.queryCommandSupported('hiliteColor')) ? 'hiliteColor' : 'backColor';
+                }
+                this.exec(cmd, color);
+            }
+
+            updateToolbarState() {
+                const checks = ['bold','italic','underline','strikeThrough'];
+                this.els.formatToolbar.querySelectorAll('[data-cmd]').forEach(btn => {
+                    if (!checks.includes(btn.dataset.cmd)) return;
+                    let on = false;
+                    try { on = document.queryCommandState(btn.dataset.cmd); } catch (e) {}
+                    btn.classList.toggle('active', on);
+                });
+            }
+
+            // 取当前编辑器内容（HTML，空则返回空串）
+            getEditorHtml() {
+                const ed = this.els.richEditor;
+                const plain = ed.innerText != null ? ed.innerText : ed.textContent;
+                if (!(plain || '').trim()) return '';
+                return sanitizeHtml(ed.innerHTML);
+            }
+
+            setEditorHtml(html) {
+                this.els.richEditor.innerHTML = html || '';
+            }
+
+            // ---------- 应急草稿（防止刷新/更新丢字） ----------
+            _draftKeyFor(id) { return 'simpleNotesDraft:' + (id || 'new'); }
+
+            writeDraft() {
+                try {
+                    localStorage.setItem(this._draftKeyFor(this.editingId), JSON.stringify({
+                        title: this.els.noteTitleInput.value,
+                        content: this.getEditorHtml(),
+                        time: Date.now()
+                    }));
+                } catch (e) {}
+            }
+
+            flushDraftSync() {
+                if (!this.els.editorContainer.classList.contains('active')) return;
+                if (this.getEditorHtml() === this.lastSavedContent) return;
+                clearTimeout(this._draftTimer);
+                this._draftTimer = null;
+                this.writeDraft();
+            }
+
+            clearDraft(id) {
+                try { localStorage.removeItem(this._draftKeyFor(id)); } catch (e) {}
+            }
+
+            scheduleDraft() {
+                if (this._draftTimer) return;
+                this._draftTimer = setTimeout(() => { this._draftTimer = null; this.writeDraft(); }, 800);
+            }
+
+            async maybeRestoreDraft(id, savedUpdatedAt) {
+                let draft = null;
+                try { draft = JSON.parse(localStorage.getItem(this._draftKeyFor(id)) || 'null'); } catch (e) { draft = null; }
+                if (!draft || !draft.content) return;
+                const base = savedUpdatedAt ? Date.parse(savedUpdatedAt) : 0;
+                if (!(draft.time > base + 1000)) { this.clearDraft(id); return; }
+                const restore = await this.showConfirm('发现未保存的草稿，是否恢复？', { okText: '恢复草稿', cancelText: '丢弃' });
+                if (restore) {
+                    if (draft.title) this.els.noteTitleInput.value = draft.title;
+                    this.setEditorHtml(normalizeToHtml(draft.content));
+                    this._updateCharCount();
+                    this.triggerAutoSave();
+                } else {
+                    this.clearDraft(id);
+                }
             }
 
             async openEditor(id = null) {
                 this.editingId = id;
-                const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-                this.els.editorContainer.style.height = `${vh}px`;
                 this.els.editorContainer.classList.add('active');
+                document.body.classList.add('editor-open');
                 const scrollY = window.scrollY;
                 document.body.style.position = 'fixed';
                 document.body.style.top = `-${scrollY}px`;
@@ -693,35 +1254,52 @@
                 let title = '';
                 let category = 'daily';
                 let content = '';
+                let savedUpdatedAt = null;
 
                 if (id) {
                     const note = await this.db.getNote(id);
                     if (note) {
                         title = note.title || '';
-                        content = normalizeContent(note.content);
+                        content = note.content;
                         category = note.category || category;
+                        savedUpdatedAt = note.updatedAt;
                     }
                 }
 
                 this.els.noteTitleInput.value = title;
                 this.els.categorySelect.value = category;
-                this.els.plainEditor.value = content;
-                this.lastSavedContent = content;
+                this.setEditorHtml(id ? normalizeToHtml(content) : '');
+                this._savedRange = null;
+                this.lastSavedContent = this.getEditorHtml();
+                this._updateCharCount();
+                if (id) {
+                    this.els.lastEditTime.textContent = new Date().toLocaleString('zh-CN');
+                } else {
+                    this.els.lastEditTime.textContent = '';
+                }
 
-                setTimeout(() => this.els.plainEditor.focus(), 300);
+                await this.maybeRestoreDraft(id, savedUpdatedAt);
+                setTimeout(() => this.els.richEditor.focus(), 300);
             }
 
             closeEditor(shouldSave = true) {
                 if (shouldSave) {
                     const title = this.els.noteTitleInput.value.trim();
-                    const content = this.els.plainEditor.value.trim();
+                    const content = this.getEditorHtml();
                     if (!this.editingId && !title && !content) {
                         shouldSave = false;
                     }
                     if (shouldSave) this.saveNote(true);
+                    else this.clearDraft(this.editingId);
                 }
                 this.els.editorContainer.classList.remove('active');
+                document.body.classList.remove('editor-open');
+                clearTimeout(this.autoSaveTimer);
+                this.autoSaveTimer = null;
+                clearTimeout(this._draftTimer);
+                this._draftTimer = null;
                 this.editingId = null;
+                this._savedRange = null;
                 this.els.timestampToolbar.style.display = 'none';
                 const scrollY = parseInt(document.body.style.top || '0') * -1;
                 document.body.style.position = '';
@@ -730,12 +1308,13 @@
                 document.body.style.right = '';
                 document.body.style.width = '';
                 window.scrollTo(0, scrollY);
+                if (this.pendingUpdate) { this.pendingUpdate = false; location.reload(); }
             }
 
             async saveNote(force = false) {
                 const title = this.els.noteTitleInput.value.trim() || '未命名笔记';
                 const category = this.els.categorySelect.value;
-                const content = this.els.plainEditor.value;
+                const content = this.getEditorHtml();
 
                 if (!force && content === this.lastSavedContent) return;
 
@@ -751,8 +1330,11 @@
                     await this.db.saveNote(noteData);
                     this.lastSavedContent = content;
                     if (!this.editingId) this.editingId = noteData.id;
+                    this.clearDraft(noteData.id);
+                    this.clearDraft('new');
                     this.els.autoSaveStatus.textContent = '已保存';
                     this.els.autoSaveStatus.classList.add('show');
+                    this.els.lastEditTime.textContent = new Date().toLocaleString('zh-CN');
                     setTimeout(() => this.els.autoSaveStatus.classList.remove('show'), 1500);
                     this.renderNotes();
                 } catch (e) {
@@ -764,7 +1346,8 @@
 
             async deleteNote() {
                 if (!this.editingId) { this.closeEditor(false); return; }
-                if (confirm('确定删除此笔记？')) {
+                if (await this.showConfirm('确定删除此笔记？', { okText: '删除', danger: true })) {
+                    this.clearDraft(this.editingId);
                     await this.db.deleteNote(this.editingId);
                     this.renderNotes();
                     this.closeEditor(false);
@@ -776,6 +1359,7 @@
                 this.els.autoSaveStatus.textContent = '编辑中...';
                 this.els.autoSaveStatus.classList.add('show');
                 this.autoSaveTimer = setTimeout(() => this.saveNote(), this.settings.autoSaveInterval);
+                this.scheduleDraft();
             }
 
             // ---------- 时间戳 ----------
@@ -790,14 +1374,7 @@
 
             insertTimestamp(format) {
                 const timestamp = this.formatTimestamp(new Date(), this.getTimestampFormat(format));
-                const plain = this.els.plainEditor;
-                const start = plain.selectionStart;
-                const end = plain.selectionEnd;
-                const val = plain.value;
-                plain.value = val.substring(0, start) + timestamp + val.substring(end);
-                plain.setSelectionRange(start + timestamp.length, start + timestamp.length);
-                plain.focus();
-                this.triggerAutoSave();
+                this.exec('insertText', timestamp);
                 this.els.timestampToolbar.style.display = 'none';
             }
 
@@ -855,7 +1432,7 @@
                     let md = `# 仿素记日记 - 笔记导出\n\n- **导出时间**: ${this.formatTimestamp(new Date(), 'YYYY年MM月DD日 HH:mm:ss')}\n- **笔记总数**: ${notes.length}\n\n---\n\n`;
                     notes.forEach((n, i) => {
                         const cat = categories.find(c => c.id === n.category);
-                        const contentText = normalizeContent(n.content);
+                        const contentText = toPlainText(n.content);
                         md += `## 笔记 ${i+1}: ${n.title}\n\n- **分类**: ${cat ? cat.name : n.category}\n- **更新**: ${this.formatTimestamp(new Date(n.updatedAt), 'YYYY年MM月DD日 HH:mm:ss')}\n\n---\n\n${contentText}\n\n---\n\n`;
                     });
                     this.downloadContent(md, `仿素记日记_${dateStr}.md`, 'text/markdown');
@@ -918,7 +1495,7 @@
                             const newNote = {
                                 id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + '_' + count,
                                 title: note.title || '未命名笔记',
-                                content: normalizeContent(note.content),
+                                content: (note.content === undefined || note.content === null) ? '' : note.content,
                                 category: categoryIdMap[note.category] || note.category || 'daily',
                                 createdAt: note.createdAt || new Date().toISOString(),
                                 updatedAt: note.updatedAt || new Date().toISOString()
@@ -926,11 +1503,11 @@
                             await this.db.saveNote(newNote);
                             count++;
                         }
-                        alert(`成功导入 ${count} 条笔记${categories.length ? ` 和 ${categories.length} 个分类` : ''}`);
+                        this.showToast(`成功导入 ${count} 条笔记${categories.length ? ` 和 ${categories.length} 个分类` : ''}`, 'success');
                         this.renderNotes();
                         this.renderCategories();
                     } catch (err) {
-                        alert('导入失败: ' + err.message);
+                        this.showToast('导入失败: ' + err.message, 'error');
                     }
                 };
                 reader.readAsText(file);
@@ -966,7 +1543,7 @@
                         await this.saveCurrentNote(currentNote, pendingCategoryName);
                         count++;
                     }
-                    alert(`成功导入 ${count} 条笔记`);
+                    this.showToast(`成功导入 ${count} 条笔记`, 'success');
                     this.renderNotes();
                 };
                 reader.readAsText(file);
@@ -1020,7 +1597,7 @@
                     this.els.searchContainer.style.display = display === 'none' ? 'block' : 'none';
                     if (display === 'none') this.els.searchInput.focus();
                 });
-                this.els.searchInput.addEventListener('input', () => this.renderNotes());
+                this.els.searchInput.addEventListener('input', debounce(() => this.renderNotes(), 300));
                 this.els.clearSearch.addEventListener('click', () => {
                     this.els.searchInput.value = '';
                     this.renderNotes();
@@ -1036,7 +1613,7 @@
                     const color = this.els.newCategoryColor.value;
                     if (!name) return;
                     const cats = await this.db.getAllCategories();
-                    if (cats.some(c => c.name === name)) { alert('分类名称已存在'); return; }
+                    if (cats.some(c => c.name === name)) { this.showToast('分类名称已存在', 'error'); return; }
                     const newOrder = cats.length > 0 ? Math.max(...cats.map(c => c.order || 0)) + 1 : 0;
                     await this.db.saveCategory({ id: 'cat_' + Date.now(), name, color, order: newOrder });
                     this.els.newCategoryName.value = '';
@@ -1044,12 +1621,25 @@
                     this.renderCategories();
                 });
 
-                this.els.exportBtn.addEventListener('click', () => {
-                    const display = this.els.exportSection.style.display;
-                    this.els.exportSection.style.display = display === 'none' ? 'block' : 'none';
-                    this.els.settingsSection.style.display = display === 'none' ? 'block' : 'none';
+                this.els.settingsBtn.addEventListener('click', () => {
+                    this.showModal(this.els.settingsModal);
                 });
-
+                
+                document.getElementById('closeSettingsModal').addEventListener('click', () => {
+                    this.hideModal(this.els.settingsModal);
+                });
+                
+                // 密码保护按钮事件
+                document.getElementById('setPasswordBtn').addEventListener('click', () => handleSetPassword());
+                document.getElementById('clearPasswordBtn').addEventListener('click', () => handleClearPassword());
+                
+                // 主题颜色单选按钮事件
+                document.querySelectorAll('input[name="themeOption"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        this.applyTheme(e.target.value);
+                    });
+                });
+                
                 this.els.exportJsonBtn.addEventListener('click', () => this.exportNotes('json'));
                 this.els.exportMarkdownBtn.addEventListener('click', () => this.exportNotes('markdown'));
 
@@ -1104,7 +1694,6 @@
                     this.db.setSetting('showAutoSaveStatus', this.settings.showAutoSaveStatus);
                 });
 
-                this.els.themeBtn.addEventListener('click', () => this.toggleTheme());
 
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && this.els.editorContainer.classList.contains('active')) {
@@ -1135,6 +1724,39 @@
             showModal(modal) { modal.classList.add('active'); }
             hideModal(modal) { modal.classList.remove('active'); }
 
+            showToast(msg, type = 'info', duration = 2500) {
+                const container = document.getElementById('toastContainer');
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.textContent = msg;
+                container.appendChild(el);
+                requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+                setTimeout(() => {
+                    el.classList.remove('show');
+                    setTimeout(() => el.remove(), 300);
+                }, duration);
+            }
+
+            showConfirm(msg, { okText = '确定', cancelText = '取消', danger = false } = {}) {
+                return new Promise(resolve => {
+                    const overlay = document.getElementById('confirmOverlay');
+                    document.getElementById('confirmMsg').textContent = msg;
+                    const btns = document.getElementById('confirmBtns');
+                    btns.innerHTML = '';
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'c-cancel';
+                    cancelBtn.textContent = cancelText;
+                    cancelBtn.onclick = () => { overlay.classList.remove('active'); resolve(false); };
+                    const okBtn = document.createElement('button');
+                    okBtn.className = danger ? 'c-danger' : 'c-ok';
+                    okBtn.textContent = okText;
+                    okBtn.onclick = () => { overlay.classList.remove('active'); resolve(true); };
+                    btns.appendChild(cancelBtn);
+                    btns.appendChild(okBtn);
+                    overlay.classList.add('active');
+                });
+            }
+
             loadSettingsToUI() {
                 this.db.getSetting('autoSaveInterval').then(val => {
                     if (val) { this.settings.autoSaveInterval = val; this.els.autoSaveIntervalInput.value = val / 1000; }
@@ -1145,21 +1767,49 @@
             }
 
             toggleTheme() {
-                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-                localStorage.setItem('simpleNotesTheme', isDark ? 'light' : 'dark');
-                this.els.themeBtn.innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+                const selectedRadio = document.querySelector('input[name="themeOption"]:checked');
+                const current = selectedRadio ? selectedRadio.value : 'auto';
+                let next;
+                if (current === 'light') next = 'dark';
+                else if (current === 'dark') next = 'auto';
+                else next = 'light';
+                
+                this.applyTheme(next);
+                const themeRadio = document.querySelector(`input[name="themeOption"][value="${next}"]`);
+                if (themeRadio) themeRadio.checked = true;
+            }
+            
+            applyTheme(theme) {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                let effectiveTheme = theme;
+                if (theme === 'auto') {
+                    effectiveTheme = prefersDark ? 'dark' : 'light';
+                }
+                
+                document.documentElement.setAttribute('data-theme', effectiveTheme);
+                
+                // 保存设置
+                this.db.setSetting('theme', theme);
+                localStorage.setItem('simpleNotesTheme', theme);
+            }
+            
+            updatePasswordStatus() {
+                const statusEl = document.getElementById('passwordStatus');
+                if (statusEl) {
+                    statusEl.textContent = needsAuth() ? '已设置' : '未设置';
+                }
             }
 
-            initTheme() {
-                const saved = localStorage.getItem('simpleNotesTheme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (saved === 'dark' || (!saved && prefersDark)) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    this.els.themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
-                } else {
-                    this.els.themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
-                }
+            async initTheme() {
+                let saved = await this.db.getSetting('theme');
+                if (!saved) saved = localStorage.getItem('simpleNotesTheme');
+                if (!saved) saved = 'auto'; // 默认自动
+                
+                // 更新主题颜色单选按钮
+                const themeRadio = document.querySelector(`input[name="themeOption"][value="${saved}"]`);
+                if (themeRadio) themeRadio.checked = true;
+                
+                this.applyTheme(saved);
             }
 
             setupViewport() {
@@ -1167,9 +1817,6 @@
                     const onResize = () => {
                         const vh = window.visualViewport.height;
                         document.documentElement.style.setProperty('--vh', `${vh}px`);
-                        if (this.els.editorContainer.classList.contains('active')) {
-                            this.els.editorContainer.style.height = `${vh}px`;
-                        }
                     };
                     window.visualViewport.addEventListener('resize', onResize);
                     onResize();
@@ -1203,6 +1850,32 @@
         //  4. 启动应用
         // ============================================================
         document.addEventListener('DOMContentLoaded', () => {
+            // 检查密码保护
+            if (needsAuth()) {
+                const authOverlay = document.createElement('div');
+                authOverlay.id = 'authOverlay';
+                authOverlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px;';
+                authOverlay.innerHTML = `
+                    <div style="text-align: center;">
+                        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: var(--primary-color);">素记日记</h2>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem;">请输入密码以继续</p>
+                    </div>
+                    <div style="position: relative; width: 280px;">
+                        <input type="password" id="authPassword" placeholder="输入密码" 
+                               style="width: 100%; padding: 14px 48px 14px 16px; font-size: 1rem; background: var(--card-color); border: 2px solid var(--border-color); border-radius: 12px; color: var(--text-primary);"
+                               onkeydown="if(event.key==='Enter') handleAuth()">
+                        <button onclick="togglePasswordVisibility('authPassword')" 
+                                style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem;">👁</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="handleAuth()" style="width: 280px; padding: 14px; border: none; border-radius: 12px; background: var(--primary-color); color: white; font-size: 1rem; cursor: pointer;">验证密码</button>
+                    <div id="authError" style="color: var(--danger-color); font-size: 0.875rem; display: none;"></div>
+                `;
+                document.body.appendChild(authOverlay);
+                document.getElementById('authPassword').focus();
+                return; // 阻止后续初始化
+            }
+            
+            // 无需密码保护，直接初始化
             window.app = new App();
         });
 
@@ -1212,8 +1885,25 @@
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').then(reg => {
           console.log('Service Worker 注册成功，作用域:', reg.scope);
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
         }).catch(err => {
           console.error('Service Worker 注册失败:', err);
+        });
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          // 更新前先落盘，避免编辑中的文字丢失
+          if (window.app && window.app.flushDraftSync) window.app.flushDraftSync();
+          const editing = window.app && window.app.els && window.app.els.editorContainer.classList.contains('active');
+          if (editing) {
+            window.app.pendingUpdate = true;
+            if (window.app.showToast) window.app.showToast('有新版本，关闭编辑器后自动更新', 'info', 3000);
+            return;
+          }
+          refreshing = true;
+          location.reload();
         });
       }
     </script>    

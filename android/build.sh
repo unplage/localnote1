@@ -1,19 +1,33 @@
 #!/bin/bash
 set -e
 
-ANDROID_HOME=/home/jamax/.local/pwa-android/sdk
-JAVA_HOME=/home/jamax/.local/pwa-android/jdk
-BUILD_TOOLS=$ANDROID_HOME/build-tools/34.0.0
-PLATFORM=$ANDROID_HOME/platforms/android-34
-PROJECT=/home/jamax/opencode_task/localnote/android
+# 路径可通过环境变量覆盖；未设置时自动探测本机 SDK/JDK
+if [ -z "$ANDROID_HOME" ]; then
+    if [ -d /opt/android-sdk ]; then
+        ANDROID_HOME=/opt/android-sdk
+    else
+        ANDROID_HOME=/home/jamax/.local/pwa-android/sdk
+    fi
+fi
+if [ -z "$JAVA_HOME" ]; then
+    JAVAC=$(command -v javac)
+else
+    JAVAC=$JAVA_HOME/bin/javac
+fi
+BUILD_TOOLS=${BUILD_TOOLS:-$ANDROID_HOME/build-tools/34.0.0}
+PLATFORM=${PLATFORM:-$ANDROID_HOME/platforms/android-34}
+PROJECT=${PROJECT:-$(cd "$(dirname "$0")" && pwd)}
 OUTDIR=$PROJECT/build
 APPNAME=仿素记日记
+
+VERSION_CODE=3
+VERSION_NAME=1.2.2
 
 rm -rf $OUTDIR
 mkdir -p $OUTDIR/out $OUTDIR/dex
 
 echo "==> 1. 编译 Java"
-$JAVA_HOME/bin/javac -d $OUTDIR/out \
+$JAVAC -d $OUTDIR/out \
     -cp $PLATFORM/android.jar \
     $PROJECT/app/src/main/java/com/localnote/app/MainActivity.java
 
@@ -27,8 +41,8 @@ $BUILD_TOOLS/aapt package -f \
     -M $PROJECT/app/src/main/AndroidManifest.xml \
     -A $PROJECT/app/src/main/assets \
     -I $PLATFORM/android.jar \
-    --version-code 2 \
-    --version-name "1.2.1" \
+    --version-code $VERSION_CODE \
+    --version-name "$VERSION_NAME" \
     -F $OUTDIR/${APPNAME}-unsigned.apk
 
 echo "==> 4. 写入 classes.dex"
@@ -46,10 +60,10 @@ $BUILD_TOOLS/apksigner sign \
     --ks-pass pass:android \
     --ks-key-alias androiddebugkey \
     --key-pass pass:android \
-    --out $OUTDIR/${APPNAME}-v1.2.1-debug.apk \
+    --out $OUTDIR/${APPNAME}-v${VERSION_NAME}-debug.apk \
     $OUTDIR/${APPNAME}-unsigned-aligned.apk
 
 rm -f $OUTDIR/${APPNAME}-unsigned.apk $OUTDIR/${APPNAME}-unsigned-aligned.apk
 echo ""
-echo "✅ APK 生成完毕: $OUTDIR/${APPNAME}-v1.2.1-debug.apk"
-ls -lh $OUTDIR/${APPNAME}-v1.2.1-debug.apk
+echo "✅ APK 生成完毕: $OUTDIR/${APPNAME}-v${VERSION_NAME}-debug.apk"
+ls -lh $OUTDIR/${APPNAME}-v${VERSION_NAME}-debug.apk
