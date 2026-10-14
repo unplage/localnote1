@@ -779,6 +779,8 @@
                 this.editingId = null;
                 this.autoSaveTimer = null;
                 this.lastSavedContent = '';
+                this.lastSavedTitle = '';
+                this.lastSavedCategory = '';
                 this._savedRange = null;
                 this._draftTimer = null;
                 this.settings = { autoSaveInterval: 3000, showAutoSaveStatus: true };
@@ -1271,6 +1273,8 @@
                 this.setEditorHtml(id ? normalizeToHtml(content) : '');
                 this._savedRange = null;
                 this.lastSavedContent = this.getEditorHtml();
+                this.lastSavedTitle = title.trim();
+                this.lastSavedCategory = category;
                 this._updateCharCount();
                 if (id) {
                     this.els.lastEditTime.textContent = new Date().toLocaleString('zh-CN');
@@ -1316,7 +1320,17 @@
                 const category = this.els.categorySelect.value;
                 const content = this.getEditorHtml();
 
-                if (!force && content === this.lastSavedContent) return;
+                const unchanged = content === this.lastSavedContent
+                    && title === (this.lastSavedTitle || '未命名笔记')
+                    && category === this.lastSavedCategory;
+                if (unchanged) {
+                    if (force) {
+                        this.els.autoSaveStatus.textContent = '已保存';
+                        this.els.autoSaveStatus.classList.add('show');
+                        setTimeout(() => this.els.autoSaveStatus.classList.remove('show'), 1500);
+                    }
+                    return;
+                }
 
                 const noteData = {
                     id: this.editingId || Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
@@ -1329,6 +1343,8 @@
                 try {
                     await this.db.saveNote(noteData);
                     this.lastSavedContent = content;
+                    this.lastSavedTitle = this.els.noteTitleInput.value.trim();
+                    this.lastSavedCategory = category;
                     if (!this.editingId) this.editingId = noteData.id;
                     this.clearDraft(noteData.id);
                     this.clearDraft('new');
