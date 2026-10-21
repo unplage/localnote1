@@ -36,9 +36,10 @@ $BUILD_TOOLS/d8 --lib $PLATFORM/android.jar \
     --output $OUTDIR/dex \
     $(find $OUTDIR/out -name "*.class")
 
-echo "==> 3. 打包 APK（manifest + assets）"
+echo "==> 3. 打包 APK（manifest + res + assets）"
 $BUILD_TOOLS/aapt package -f \
     -M $PROJECT/app/src/main/AndroidManifest.xml \
+    -S $PROJECT/app/src/main/res \
     -A $PROJECT/app/src/main/assets \
     -I $PLATFORM/android.jar \
     --version-code $VERSION_CODE \

@@ -8,9 +8,11 @@ Zero-build PWA note app. Everything is in `index.html` (~1900 lines of inline HT
 
 - `index.html` — Single-file app: UI (HTML), styles (CSS), logic (JS) all inline. `DBManager` (IndexedDB) and `App` class defined in a `<script>` tag.
 - `sw.js` — Service Worker. Network-first for HTML, cache-first for static assets. Dynamically scopes by subpath for GitHub Pages multi-project isolation.
-- `manifest.json` — PWA manifest with inline SVG data-URIs for icons.
+- `manifest.json` — PWA manifest, icons point at the PNGs in `icons/`.
+- `icons/icon.svg` — Master vector for the app icon (notebook + pencil on the brand indigo). Source of truth for every generated bitmap.
+- `tools/make_icons.py` — Regenerates all icon bitmaps from `icons/icon.svg` (needs `cairosvg` + `pillow`). Run after editing the SVG.
 - `clear.html` — Standalone cache-clearing utility page.
-- `android/` — Android WebView wrapper. Built via `android/build.sh` (requires local Android SDK/JDK, not automated in CI). `android/app/src/main/assets/` is a **manual copy** of the web files (`index.html`, `sw.js`, `manifest.json`, `clear.html`, `fontawesome.min.css`, `webfonts/`); keep it in sync when editing the app.
+- `android/` — Android WebView wrapper. Built via `android/build.sh` (requires local Android SDK/JDK, not automated in CI). `android/app/src/main/assets/` is a **manual copy** of the web files (`index.html`, `sw.js`, `manifest.json`, `clear.html`, `fontawesome.min.css`, `webfonts/`, `icons/`); keep it in sync when editing the app.
 
 ## Dev Workflow
 
@@ -32,6 +34,7 @@ No build step. No lint/test/typecheck commands exist.
 - Auto-save uses a configurable timer (default 3s), triggered on editor `input` events.
 - Dark theme toggled via `data-theme="dark"` on `<html>`.
 - Icons: Font Awesome 6.4.0 is vendored locally (`fontawesome.min.css` + `webfonts/`), not loaded from a CDN.
+- App icon: `icons/icon.svg` is the only hand-edited source. `python3 tools/make_icons.py` regenerates `icons/*.png`, `favicon.ico` and the Android launcher bitmaps in `android/app/src/main/res/`. The `<g id="glyph">` block in the SVG is reused (scaled) for the maskable / adaptive-icon variants, so keep that id intact.
 
 
 ## Gotchas

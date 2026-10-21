@@ -27,7 +27,11 @@ localnote/
 ├── index.html      # 主应用（HTML + CSS + JS ~1200 行单文件）
 ├── manifest.json   # PWA 清单
 ├── sw.js           # Service Worker（离线缓存）
-└── clear.html      # PWA 缓存清理工具
+├── clear.html      # PWA 缓存清理工具
+├── icons/          # 应用图标（icon.svg 为矢量源文件，其余为生成位图）
+├── favicon.ico     # 标签页图标
+└── tools/
+    └── make_icons.py  # 由 icons/icon.svg 重新生成全部图标
 ```
 
 ---

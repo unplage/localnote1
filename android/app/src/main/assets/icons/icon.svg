@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="仿素记日记">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#7E7DF7"/>
+      <stop offset="0.55" stop-color="#5D5CDE"/>
+      <stop offset="1" stop-color="#4645C4"/>
+    </linearGradient>
+    <linearGradient id="pencil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD166"/>
+      <stop offset="1" stop-color="#F5A623"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <g id="glyph">
+    <!-- 笔记本投影 -->
+    <rect x="104" y="100" width="272" height="336" rx="34" fill="#000000" opacity="0.15"/>
+    <!-- 纸页 -->
+    <rect x="104" y="88" width="272" height="336" rx="34" fill="#FFFFFF"/>
+
+    <!-- 装订线 -->
+    <line x1="164" y1="112" x2="164" y2="400" stroke="#E4E2FC" stroke-width="6" stroke-linecap="round"/>
+    <!-- 线圈 -->
+    <g fill="#3F3EAE">
+      <rect x="140" y="123" width="42" height="18" rx="9"/>
+      <rect x="140" y="181" width="42" height="18" rx="9"/>
+      <rect x="140" y="239" width="42" height="18" rx="9"/>
+      <rect x="140" y="297" width="42" height="18" rx="9"/>
+      <rect x="140" y="355" width="42" height="18" rx="9"/>
+    </g>
+
+    <!-- 文字行 -->
+    <g fill="#D6D4F7">
+      <rect x="208" y="150" width="130" height="18" rx="9"/>
+      <rect x="208" y="204" width="104" height="18" rx="9"/>
+      <rect x="208" y="258" width="130" height="18" rx="9"/>
+      <rect x="208" y="312" width="80" height="18" rx="9"/>
+    </g>
+
+    <!-- 铅笔（笔尖指向左下，像正在书写） -->
+    <g transform="translate(300 392) rotate(-45)">
+      <polygon points="0,0 18,-10 18,10" fill="#2F2F3F"/>
+      <polygon points="14,-20 52,-24 52,24 14,20" fill="#F0D2A0"/>
+      <rect x="52" y="-24" width="86" height="48" fill="url(#pencil)"/>
+      <rect x="138" y="-24" width="14" height="48" fill="#F2A93B"/>
+      <rect x="152" y="-24" width="20" height="48" rx="10" fill="#FF9AA2"/>
+    </g>
+  </g>
+</svg>
