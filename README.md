@@ -39,7 +39,7 @@ localnote/
 ## 架构
 
 ### 数据层 (`DBManager`)
-- **数据库**: `SimpleNotesDB` (IndexedDB, v2)
+- **数据库**: `<应用路径>::SimpleNotesDB` (IndexedDB, v2)，按部署路径隔离，不同 PWA 互不共享
 - **存储**: `notes` / `categories` / `settings` 三个 object store
 - **索引**: `notes.category`（非唯一）、`notes.updatedAt`（非唯一）
 

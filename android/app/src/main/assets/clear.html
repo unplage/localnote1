@@ -205,6 +205,16 @@
         container.scrollTop = container.scrollHeight;
     }
 
+    // 缓存名精确匹配：只命中本项目自己的缓存，避免误删名称相近的其它 PWA
+    // 支持 'pwa-cache-<name>-v3' 与 'pwa-cache-<name>--v3' 两种命名
+    function isOwnCacheName(key) {
+        const m = String(key).match(/^pwa-cache-?(.+?)(?:--v|-v)\d+$/);
+        if (!m) return isMatch(key); // 未知命名格式，沿用关键词匹配
+        const keyProject = m[1].replace(/^-+|-+$/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
+        const ownProject = PWA_NAME.replace(/[^a-zA-Z0-9_-]/g, '');
+        return keyProject === ownProject;
+    }
+
     // 核心匹配函数（关键修复）
     function isMatch(text) {
         if (!text) return false;
@@ -250,11 +260,10 @@
                 
                 for (const reg of regs) {
                     const scope = reg.scope || '';
-                    // 匹配规则：作用域包含当前 PWA 路径
-                    const isThisPWA = 
-                        scope.includes(FULL_URL_PREFIX) ||
-                        scope.includes(CURRENT_DIR) ||
-                        scope.includes(PWA_NAME);
+                    // 匹配规则：只注销作用域以当前 PWA 目录开头的 SW
+                    const isThisPWA = !!(scope && (
+                        scope === FULL_URL_PREFIX || scope.startsWith(FULL_URL_PREFIX)
+                    ));
                     
                     if (isThisPWA) {
                         await reg.unregister();
@@ -273,7 +282,7 @@
                 log(`发现 ${keys.length} 个缓存`, 'info');
                 
                 for (const key of keys) {
-                    const isThisPWA = isMatch(key);
+                    const isThisPWA = isOwnCacheName(key);
                     
                     if (isThisPWA) {
                         await caches.delete(key);
@@ -334,11 +343,15 @@
                 clearedStorage++;
             });
             
-            // 5. sessionStorage
-            const ssCount = sessionStorage.length;
-            sessionStorage.clear();
-            if (ssCount > 0) {
-                log(`✓ 清理 sessionStorage: ${ssCount} 项`, 'success');
+            // 5. sessionStorage（只清理本项目的键，避免影响同源其它 PWA）
+            const ssKeys = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key && isMatch(key)) ssKeys.push(key);
+            }
+            ssKeys.forEach(key => sessionStorage.removeItem(key));
+            if (ssKeys.length > 0) {
+                log(`✓ 清理 sessionStorage: ${ssKeys.length} 项`, 'success');
             }
             
             // 完成
@@ -367,15 +380,13 @@
             const regs = await navigator.serviceWorker.getRegistrations();
             sw = regs.filter(r => {
                 const scope = r.scope || '';
-                return scope.includes(FULL_URL_PREFIX) || 
-                       scope.includes(CURRENT_DIR) ||
-                       scope.includes(PWA_NAME);
+                return scope === FULL_URL_PREFIX || scope.startsWith(FULL_URL_PREFIX);
             }).length;
         }
         
         if ('caches' in window) {
             const keys = await caches.keys();
-            cache = keys.filter(k => isMatch(k)).length;
+            cache = keys.filter(k => isOwnCacheName(k)).length;
         }
         
         for (let i = 0; i < localStorage.length; i++) {

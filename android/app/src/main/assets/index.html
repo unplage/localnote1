@@ -346,11 +346,69 @@
 
     <script>
         // ============================================================
+        //  0. 同源多 PWA 存储命名空间
+        // ============================================================
+        // localStorage / IndexedDB 均按「源」隔离，而 GitHub Pages 的所有项目页
+        // (https://<user>.github.io/<repo>/) 共用同一个源。若直接使用固定键名，
+        // 开屏密码、主题、草稿会与同源其它 PWA 互相串用。
+        // 因此所有存储键与库名统一加「应用路径」前缀，实现完全隔离。
+        const APP_SCOPE_PATH = location.pathname.replace(/[^/]*$/, '');
+        const APP_ID = (APP_SCOPE_PATH.split('/').filter(Boolean).join('-') || 'root')
+            .replace(/[^a-zA-Z0-9_-]/g, '') || 'root';
+        const LS_PREFIX = APP_ID + '::';
+        const DB_NAME = APP_ID + '::SimpleNotesDB';
+        const LEGACY_DB_NAME = 'SimpleNotesDB';
+        const DRAFT_PREFIX = 'simpleNotesDraft:';
+
+        // 命名空间化的 localStorage 访问器
+        const Store = {
+            key(k) { return LS_PREFIX + k; },
+            get(k) { return localStorage.getItem(LS_PREFIX + k); },
+            set(k, v) { localStorage.setItem(LS_PREFIX + k, v); },
+            remove(k) { localStorage.removeItem(LS_PREFIX + k); }
+        };
+
+        // 旧版共享键（属于本应用的非敏感数据，可安全迁移）
+        const LEGACY_SHARED_KEYS = ['simpleNotesTheme'];
+        const LEGACY_DRAFT_PREFIX = 'simpleNotesDraft:';
+        // 共享密码键：可能属于同源其它 PWA，禁止自动迁移（见 resolveLegacyPassword）
+        const PWD_KEY = 'app_password_hash';
+        const LEGACY_PWD_KEY = 'app_password_hash';
+        const LEGACY_PWD_SKIP_FLAG = LS_PREFIX + '__legacy_pwd_skipped';
+
+        // 一次性迁移旧版 localStorage 数据到命名空间，并清除共享键
+        function migrateLegacyStorage() {
+            if (Store.get('__migrated_v1')) return;
+            LEGACY_SHARED_KEYS.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value === null) return;
+                if (Store.get(key) === null) Store.set(key, value);
+                localStorage.removeItem(key);
+            });
+            // 旧版草稿：'simpleNotesDraft:<id>' -> '<app>::simpleNotesDraft:<id>'
+            const legacyDrafts = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(LEGACY_DRAFT_PREFIX)) legacyDrafts.push(key);
+            }
+            legacyDrafts.forEach(key => {
+                const value = localStorage.getItem(key);
+                const id = key.slice(LEGACY_DRAFT_PREFIX.length);
+                if (value !== null && Store.get(DRAFT_PREFIX + id) === null) {
+                    Store.set(DRAFT_PREFIX + id, value);
+                }
+                localStorage.removeItem(key);
+            });
+            Store.set('__migrated_v1', String(Date.now()));
+        }
+        migrateLegacyStorage();
+
+        // ============================================================
         //  1. IndexedDB 操作类
         // ============================================================
         class DBManager {
             constructor() {
-                this.dbName = 'SimpleNotesDB';
+                this.dbName = DB_NAME;
                 this.dbVersion = 2;
                 this.db = null;
             }
@@ -475,6 +533,96 @@
                     res();
                 });
             }
+        }
+
+        // ============================================================
+        //  1.1 旧版 IndexedDB 迁移：'SimpleNotesDB' -> '<app>::SimpleNotesDB'
+        // 旧库名是全源共享的，可能被同源其它 PWA 使用，因此只做一次性搬迁；
+        // 搬迁后本应用只读写带命名空间的新库，且不删除旧库（避免误伤其它应用）。
+        // ============================================================
+        function legacyDbExists() {
+            if (!indexedDB.databases) return Promise.resolve(true);
+            return indexedDB.databases().then(
+                list => list.some(d => d.name === LEGACY_DB_NAME),
+                () => true
+            );
+        }
+
+        function readStoreRows(sourceDb, storeName) {
+            return new Promise(resolve => {
+                try {
+                    const req = sourceDb.transaction([storeName], 'readonly').objectStore(storeName).getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                } catch (e) { resolve([]); }
+            });
+        }
+
+        function countStoreRows(db, storeName) {
+            return new Promise(resolve => {
+                try {
+                    const req = db.transaction([storeName], 'readonly').objectStore(storeName).count();
+                    req.onsuccess = () => resolve(req.result || 0);
+                    req.onerror = () => resolve(0);
+                } catch (e) { resolve(0); }
+            });
+        }
+
+        function writeStoreRows(db, storeName, rows) {
+            return new Promise(resolve => {
+                try {
+                    const tx = db.transaction([storeName], 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    rows.forEach(row => {
+                        try { store.put(row); } catch (e) { /* 忽略单条失败 */ }
+                    });
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                    tx.onabort = () => resolve(false);
+                } catch (e) { resolve(false); }
+            });
+        }
+
+        async function migrateLegacyDB(db) {
+            if (Store.get('__db_migrated_v1')) return;
+            if (!(await legacyDbExists())) {
+                Store.set('__db_migrated_v1', String(Date.now()));
+                return;
+            }
+            let legacyDb = null;
+            try {
+                legacyDb = await new Promise((resolve, reject) => {
+                    const req = indexedDB.open(LEGACY_DB_NAME);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                    req.onblocked = () => reject(new Error('旧库被占用'));
+                });
+            } catch (e) {
+                console.warn('[DB] 无法打开旧库，跳过迁移:', e);
+                return;
+            }
+            // 安全校验：只有结构确实是本应用的旧库才迁移，避免导入其它 PWA 的数据
+            const isOwnLegacy = ['notes', 'categories', 'settings']
+                .every(name => legacyDb.objectStoreNames.contains(name));
+            if (!isOwnLegacy) {
+                legacyDb.close();
+                Store.set('__db_migrated_v1', String(Date.now()));
+                return;
+            }
+            let copied = 0;
+            let failed = false;
+            for (const storeName of ['notes', 'categories', 'settings']) {
+                if (!db.objectStoreNames.contains(storeName)) continue;
+                const rows = await readStoreRows(legacyDb, storeName);
+                if (!rows.length) continue;
+                if (await countStoreRows(db, storeName) > 0) continue;
+                if (await writeStoreRows(db, storeName, rows)) copied += rows.length;
+                else failed = true;
+            }
+            legacyDb.close();
+            // 写入失败则不落标记，下次启动重试（已迁移的 store 会因非空而跳过）
+            if (!failed) Store.set('__db_migrated_v1', String(Date.now()));
+            if (copied > 0) console.log('[DB] 已从旧库迁移记录数:', copied);
         }
 
         // ============================================================
@@ -642,25 +790,28 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
         
-        // 设置密码
+        // 设置密码（写入本应用独立命名空间，不影响同源其它 PWA）
         async function setPassword(password) {
             const hash = await sha256(password);
-            localStorage.setItem('app_password_hash', hash);
+            Store.set(PWD_KEY, hash);
+            // 已在本应用显式设置密码，不再询问是否沿用旧版共享密码
+            localStorage.setItem(LEGACY_PWD_SKIP_FLAG, String(Date.now()));
             // 更新密码状态显示
             const statusEl = document.getElementById('passwordStatus');
             if (statusEl) statusEl.textContent = '已设置';
         }
         
-        // 清除密码
+        // 清除密码（只清除本应用的密码）
         function clearPassword() {
-            localStorage.removeItem('app_password_hash');
+            Store.remove(PWD_KEY);
+            localStorage.setItem(LEGACY_PWD_SKIP_FLAG, String(Date.now()));
             const statusEl = document.getElementById('passwordStatus');
             if (statusEl) statusEl.textContent = '未设置';
         }
         
         // 验证密码
         async function verifyPassword(input) {
-            const storedHash = localStorage.getItem('app_password_hash');
+            const storedHash = Store.get(PWD_KEY);
             if (!storedHash) return true; // 未设置密码，直接通过
             const inputHash = await sha256(input);
             return inputHash === storedHash;
@@ -668,7 +819,75 @@
         
         // 检查是否需要认证
         function needsAuth() {
-            return !!localStorage.getItem('app_password_hash');
+            return !!Store.get(PWD_KEY);
+        }
+
+        async function hashMatches(input, hash) {
+            if (!hash) return false;
+            return (await sha256(input)) === hash;
+        }
+
+        // ============================================================
+        // 旧版共享密码处理
+        // 旧版本把密码哈希写在同域共享键 app_password_hash 上，该键可能被同源
+        // 其它 PWA 占用（互相串用）。这里不自动沿用，避免用「别的应用的密码」
+        // 锁住本应用；只有用户输入旧密码校验通过后，才迁移到本应用命名空间。
+        // ============================================================
+        function getLegacyPasswordHash() {
+            return localStorage.getItem(LEGACY_PWD_KEY);
+        }
+
+        function showLegacyPasswordPrompt() {
+            return new Promise(resolve => {
+                const overlay = document.createElement('div');
+                overlay.id = 'legacyPwdOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:var(--bg-color);z-index:10001;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:24px;';
+                overlay.innerHTML = `
+                    <div style="text-align:center;max-width:340px;">
+                        <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:10px;color:var(--primary-color);">检测到旧版密码设置</h3>
+                        <p style="color:var(--text-secondary);font-size:0.8rem;line-height:1.7;">
+                            旧版开屏密码保存在同域共享存储中，可能与其它应用互相串用。<br>
+                            输入旧密码可将其迁移到本应用<b>独立</b>的存储空间；<br>
+                            留空或跳过则不启用开屏密码，稍后可在「设置」中重新设置。
+                        </p>
+                    </div>
+                    <input type="password" id="legacyPwdInput" placeholder="旧密码（可留空）"
+                           style="width:280px;padding:14px 16px;font-size:1rem;background:var(--card-color);border:2px solid var(--border-color);border-radius:12px;color:var(--text-primary);">
+                    <div style="display:flex;gap:12px;">
+                        <button id="legacyPwdOk" style="width:134px;padding:12px;border:none;border-radius:12px;background:var(--primary-color);color:#fff;font-size:1rem;cursor:pointer;">沿用旧密码</button>
+                        <button id="legacyPwdSkip" style="width:134px;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--card-color);color:var(--text-primary);font-size:1rem;cursor:pointer;">跳过</button>
+                    </div>`;
+                document.body.appendChild(overlay);
+                const input = overlay.querySelector('#legacyPwdInput');
+                input.focus();
+                overlay.querySelector('#legacyPwdOk').onclick = async () => {
+                    const value = input.value;
+                    overlay.remove();
+                    if (!value) { resolve('skip'); return; }
+                    resolve(await hashMatches(value, getLegacyPasswordHash()) ? 'adopt' : 'mismatch');
+                };
+                overlay.querySelector('#legacyPwdSkip').onclick = () => {
+                    overlay.remove();
+                    resolve('skip');
+                };
+            });
+        }
+
+        async function resolveLegacyPassword() {
+            const legacyHash = getLegacyPasswordHash();
+            if (!legacyHash) return;
+            if (Store.get(PWD_KEY)) return;                          // 本应用已有独立密码
+            if (localStorage.getItem(LEGACY_PWD_SKIP_FLAG)) return;  // 用户已选择跳过
+            const result = await showLegacyPasswordPrompt();
+            if (result === 'adopt') {
+                Store.set(PWD_KEY, legacyHash);
+                // 已确认归属本应用，清除共享键，其它 PWA 不再继承
+                localStorage.removeItem(LEGACY_PWD_KEY);
+                localStorage.removeItem(LEGACY_PWD_SKIP_FLAG);
+            } else {
+                // 不删除共享键：它可能属于同源其它应用
+                localStorage.setItem(LEGACY_PWD_SKIP_FLAG, String(Date.now()));
+            }
         }
         
         // 切换密码可见性
@@ -863,6 +1082,7 @@
             // ---------- 初始化 ----------
             async init() {
                 await this.db.open();
+                await migrateLegacyDB(this.db.db);
                 try { document.execCommand('styleWithCSS', false, true); } catch (e) {}
                 try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
                 if ('virtualKeyboard' in navigator) {
@@ -1200,7 +1420,7 @@
             }
 
             // ---------- 应急草稿（防止刷新/更新丢字） ----------
-            _draftKeyFor(id) { return 'simpleNotesDraft:' + (id || 'new'); }
+            _draftKeyFor(id) { return Store.key(DRAFT_PREFIX + (id || 'new')); }
 
             writeDraft() {
                 try {
@@ -1810,7 +2030,7 @@
                 
                 // 保存设置
                 this.db.setSetting('theme', theme);
-                localStorage.setItem('simpleNotesTheme', theme);
+                Store.set('simpleNotesTheme', theme);
             }
             
             updatePasswordStatus() {
@@ -1822,7 +2042,7 @@
 
             async initTheme() {
                 let saved = await this.db.getSetting('theme');
-                if (!saved) saved = localStorage.getItem('simpleNotesTheme');
+                if (!saved) saved = Store.get('simpleNotesTheme');
                 if (!saved) saved = 'auto'; // 默认自动
                 
                 // 更新主题颜色单选按钮
@@ -1869,7 +2089,9 @@
         // ============================================================
         //  4. 启动应用
         // ============================================================
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 先处理旧版共享密码（确认归属后才迁移，避免与其它 PWA 互串）
+            await resolveLegacyPassword();
             // 检查密码保护
             if (needsAuth()) {
                 const authOverlay = document.createElement('div');

@@ -25,11 +25,12 @@ No build step. No lint/test/typecheck commands exist.
 
 ## Architecture Notes
 
-- Data layer: IndexedDB (`SimpleNotesDB` v2) with three object stores: `notes`, `categories`, `settings`.
+- Data layer: IndexedDB (`<app-id>::SimpleNotesDB` v2) with three object stores: `notes`, `categories`, `settings`. The `<app-id>` prefix is derived from the deployment subpath (`localnote1`, `android_asset`, …) so same-origin PWAs never share a database. Legacy `SimpleNotesDB` is copied into the namespaced DB once (`migrateLegacyDB`) but never deleted.
+- Storage isolation: every `localStorage` key goes through the `Store` helper and is prefixed with `<app-id>::` (password, theme, drafts). The legacy shared password key `app_password_hash` is **not** auto-migrated; the user must confirm it (see `resolveLegacyPassword`) because it may belong to another same-origin PWA.
 - Categories have an `order` field for sort; `getAllCategories()` auto-assigns `order` if missing.
 - Editor is a zero-dependency `contenteditable` (`#rich-editor`) with a toolbar; formatting uses `document.execCommand`. No editor library and no CDN, so rich text works fully offline (including Android WebView).
 - Note `content` is stored as sanitized HTML. Plain-text and legacy TipTap JSON are normalized on read via `normalizeToHtml()` / `legacyTiptapToHtml()`; use `toPlainText()` for previews, search and Markdown export. `sanitizeHtml()` strips disallowed tags/attributes.
-- Data-loss guards: per-note emergency draft in `localStorage` (`simpleNotesDraft:<id>`) written on input and flushed on `pagehide`/`visibilitychange`; SW `controllerchange` defers reload while the editor is open; `navigator.storage.persist()` is requested on init.
+- Data-loss guards: per-note emergency draft in `localStorage` (`<app-id>::simpleNotesDraft:<id>`) written on input and flushed on `pagehide`/`visibilitychange`; SW `controllerchange` defers reload while the editor is open; `navigator.storage.persist()` is requested on init.
 - Note IDs: `Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)`.
 - Auto-save uses a configurable timer (default 3s), triggered on editor `input` events.
 - Dark theme toggled via `data-theme="dark"` on `<html>`.
@@ -42,4 +43,4 @@ No build step. No lint/test/typecheck commands exist.
 - Editing the app means editing `index.html` — there is no separate JS/CSS file to modify.
 - The Android build script (`android/build.sh`) has hardcoded absolute paths to a specific developer's SDK install; it won't work as-is elsewhere.
 - Service Worker caches aggressively. After changes, use `clear.html` or hard-refresh to see updates.
-- The `sw.js` cache name is derived from the subpath (`pwa-cache-<path>-vN`); changing the deployment path changes the cache key. Bump `N` after editing app files to force an update.
+- The `sw.js` cache name is derived from the subpath (`pwa-cache-<path>-vN`); changing the deployment path changes the cache key. Bump `N` after editing app files to force an update. `activate` only deletes caches matching this project's exact `^pwa-cache<path>v\d+$` pattern — never other PWAs' caches; cache lookups are also scoped to the current project cache.
