@@ -132,6 +132,13 @@
 
             <div class="log-container" id="logContainer"></div>
 
+            <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px;">
+                <div style="font-size:13px;font-weight:600;margin-bottom:4px;">📡 离线可用性自检</div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">只检查不删除。确认关键资源已缓存，断网后仍可正常打开应用。</div>
+                <button class="btn btn-primary" id="offlineCheckBtn" onclick="runOfflineCheck()" style="width:100%;margin-bottom:10px;">开始检查</button>
+                <div id="offlineCheckResult"></div>
+            </div>
+
             <button class="btn btn-primary" id="clearBtn" onclick="startClear()">开始清理</button>
             <button class="btn btn-success" id="backBtn" onclick="goBack()" style="display:none;">✓ 返回 PWA</button>
         </div>
@@ -147,6 +154,69 @@
         // 严格模式：false = 更激进的匹配（推荐）
         STRICT_MODE: false
     };
+
+    // ==================== 离线可用性自检 ====================
+    // 只检查不删除：确认关键资源是否已进 Cache Storage
+    const OFFLINE_CRITICAL = [
+        'index.html',
+        'manifest.json',
+        'favicon.ico',
+        'fontawesome.min.css',
+        'icons/icon.svg',
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon-maskable-512.png',
+        'icons/apple-touch-icon.png',
+        'webfonts/fa-solid-900.woff2',
+        'webfonts/fa-regular-400.woff2',
+        'webfonts/fa-brands-400.woff2',
+        'webfonts/fa-v4compatibility.woff2'
+    ];
+
+    async function runOfflineCheck() {
+        const btn = document.getElementById('offlineCheckBtn');
+        const out = document.getElementById('offlineCheckResult');
+        btn.disabled = true;
+        btn.textContent = '检查中…';
+        out.innerHTML = '';
+        const rows = [];
+        try {
+            const names = ('caches' in window) ? await caches.keys() : [];
+            const own = names.filter(isOwnCacheName);
+            for (const rel of OFFLINE_CRITICAL) {
+                const url = CURRENT_DIR + rel;
+                let cached = false;
+                for (const n of own) {
+                    try {
+                        const c = await caches.open(n);
+                        if (await c.match(url)) { cached = true; break; }
+                    } catch (e) { /* 忽略 */ }
+                }
+                rows.push({ rel, cached });
+            }
+            let swOk = false;
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                swOk = regs.some(r => r.scope && (r.scope === FULL_URL_PREFIX || r.scope.startsWith(FULL_URL_PREFIX)));
+            } catch (e) { /* 忽略 */ }
+
+            const html = rows.map(r => `
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);">
+                    <span style="color:${r.cached ? 'var(--success)' : 'var(--danger)'};">${r.cached ? '✓' : '✗'}</span>
+                    <span style="flex:1;font-family:monospace;word-break:break-all;">${r.rel}</span>
+                </div>`).join('');
+            const missing = rows.filter(r => !r.cached).length;
+            out.innerHTML = html +
+                `<div style="margin-top:10px;font-size:12px;line-height:1.7;color:${missing ? 'var(--danger)' : 'var(--success)'}">
+                    Service Worker：${swOk ? '已注册 ✓' : '未注册 ✗'}<br>
+                    ${missing ? `有 ${missing} 项资源未缓存，请联网状态下打开一次主应用（会触发预缓存）。` : '全部关键资源已缓存，断网后可正常打开。'}
+                </div>`;
+        } catch (e) {
+            out.innerHTML = `<div style="font-size:12px;color:var(--danger)">检查失败：${String(e && e.message || e)}</div>`;
+        }
+        btn.disabled = false;
+        btn.textContent = '重新检查';
+    }
 
     // ==================== 核心代码 ====================
 
