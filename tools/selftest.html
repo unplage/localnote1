@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仿素记日记 · 自检</title>
+<style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+    body{background:#F8F9FA;color:#333;padding:24px;line-height:1.6}
+    .wrap{max-width:860px;margin:0 auto}
+    h1{font-size:22px;margin-bottom:4px;color:#5D5CDE}
+    .sub{font-size:13px;color:#777;margin-bottom:18px}
+    .bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+    .btn{padding:10px 18px;border:none;border-radius:8px;background:#5D5CDE;color:#fff;font-size:14px;cursor:pointer}
+    .btn.sec{background:#fff;color:#333;border:1px solid #E0E0E0}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .summary{padding:10px 14px;border-radius:8px;background:#fff;border:1px solid #E0E0E0;font-size:14px;margin-bottom:12px}
+    .summary.ok{background:#E8F7EC;border-color:#34C759}
+    .summary.bad{background:#FDECEA;border-color:#FF3B30}
+    .case{border-bottom:1px solid #E8E8E8;padding:8px 0;font-size:13px;display:flex;gap:10px;align-items:flex-start}
+    .case:last-child{border-bottom:none}
+    .ic{flex:0 0 18px;font-weight:700}
+    .case.ok .ic{color:#34C759}
+    .case.bad .ic{color:#FF3B30}
+    .name{flex:1}
+    .msg{display:block;color:#FF3B30;font-size:12px;margin-top:3px;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace}
+    iframe{width:1px;height:1px;border:0;position:absolute;left:-9999px}
+    code{background:#eee;padding:1px 5px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h1>仿素记日记 · 自检</h1>
+    <div class="sub">在真实浏览器中加载 <code>index.html</code> 并对其纯函数做断言。直接用浏览器打开本文件即可，无需任何依赖。</div>
+    <div class="bar">
+        <button class="btn" id="runBtn">运行自检</button>
+        <button class="btn sec" id="reloadBtn">重新加载被测页面</button>
+        <span id="state" style="font-size:13px;color:#777"></span>
+    </div>
+    <div class="summary" id="summary">尚未运行</div>
+    <div id="list" style="background:#fff;border:1px solid #E0E0E0;border-radius:10px;padding:6px 14px"></div>
+</div>
+
+<!-- 被测应用（隐藏 iframe，同源可直接访问其 window 上的函数） -->
+<iframe id="appFrame" src="../index.html" title="被测应用"></iframe>
+
+<script>
+const frame = document.getElementById('appFrame');
+const listEl = document.getElementById('list');
+const sumEl = document.getElementById('summary');
+const stateEl = document.getElementById('state');
+const results = [];
+
+function eq(a, b, msg) {
+    const sa = JSON.stringify(a), sb = JSON.stringify(b);
+    if (sa !== sb) throw new Error((msg || '') + ' 期望 ' + sb + '，实际 ' + sa);
+}
+function ok(v, msg) { if (!v) throw new Error(msg || '期望为真'); }
+function has(hay, needle, msg) {
+    if (String(hay).indexOf(needle) < 0) throw new Error((msg || '') + ' 输出中未找到 ' + needle + '：' + hay);
+}
+function lacks(hay, needle, msg) {
+    if (String(hay).indexOf(needle) >= 0) throw new Error((msg || '') + ' 输出中不应出现 ' + needle + '：' + hay);
+}
+
+function render() {
+    listEl.innerHTML = '';
+    results.forEach(r => {
+        const d = document.createElement('div');
+        d.className = 'case ' + (r.ok ? 'ok' : 'bad');
+        d.innerHTML = '<span class="ic">' + (r.ok ? '✓' : '✗') + '</span>' +
+            '<span class="name">' + r.name + (r.msg ? '<span class="msg">' + escapeHtml(r.msg) + '</span>' : '') + '</span>';
+        listEl.appendChild(d);
+    });
+    const bad = results.filter(r => !r.ok).length;
+    sumEl.className = 'summary ' + (bad ? 'bad' : 'ok');
+    sumEl.textContent = results.length
+        ? (bad ? '❌ ' + bad + ' / ' + results.length + ' 项失败' : '✅ 全部 ' + results.length + ' 项通过')
+        : '尚未运行';
+}
+
+function escapeHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML.replace(/"/g, '&quot;');
+}
+
+function runTests() {
+    results.length = 0;
+    const w = frame.contentWindow;
+    if (!w) { stateEl.textContent = '被测页面未就绪'; return; }
+
+    const T = (name, fn) => {
+        try { fn(w); results.push({ name, ok: true }); }
+        catch (e) { results.push({ name, ok: false, msg: e && e.message ? e.message : String(e) }); }
+    };
+
+    // ---------- 转义与消毒 ----------
+    T('escapeHtml 转义引号', w => {
+        eq(w.escapeHtml('a"b\'c<d>&e'), 'a&quot;b&#39;c&lt;d&gt;&amp;e');
+    });
+
+    T('escapeHtml 可安全用于属性值', w => {
+        const name = '"><img src=x onerror=alert(1)>';
+        const div = w.document.createElement('div');
+        div.innerHTML = '<input value="' + w.escapeHtml(name) + '">';
+        eq(div.querySelectorAll('img').length, 0, '不应生成 img 元素');
+        eq(div.querySelector('input').getAttribute('value'), name);
+    });
+
+    T('sanitizeHtml 剥离 script 与其内容', w => {
+        const out = w.sanitizeHtml('<p>ok</p><script>alert(1)<\/script>');
+        lacks(out, 'script', 'script 标签应被移除');
+        lacks(out, 'alert(1)', 'script 内容不应变成可见文本');
+    });
+
+    T('sanitizeHtml 剥离事件属性', w => {
+        const out = w.sanitizeHtml('<p onclick="evil()" onmouseover="x()">t</p>');
+        lacks(out, 'onclick');
+        lacks(out, 'onmouseover');
+    });
+
+    T('sanitizeHtml 拦截 javascript: 协议', w => {
+        lacks(w.sanitizeHtml('<a href="javascript:alert(1)">x</a>'), 'javascript:');
+    });
+
+    T('sanitizeHtml 保留安全链接并补 rel', w => {
+        const out = w.sanitizeHtml('<a href="https://example.com">x</a>');
+        has(out, 'href="https://example.com"');
+        has(out, 'rel="noopener noreferrer nofollow"');
+    });
+
+    T('sanitizeHtml 过滤 style 中的 url()/expression()', w => {
+        const out = w.sanitizeHtml('<span style="background-color:url(javascript:1);color:red">x</span>');
+        lacks(out, 'url(');
+        has(out, 'color:red');
+    });
+
+    T('sanitizeHtml 允许表格/图片/分隔线', w => {
+        const out = w.sanitizeHtml('<table><tr><td>a</td></tr></table><hr><img src="data:image/png;base64,iVBORw0KGgo=">');
+        has(out, '<table>');
+        has(out, '<hr');
+        has(out, 'data:image/png');
+    });
+
+    T('sanitizeHtml 拒绝 data:image/svg+xml', w => {
+        lacks(w.sanitizeHtml('<img src="data:image/svg+xml;base64,PHN2Zz4=">'), 'svg+xml');
+    });
+
+    T('sanitizeHtml 移除无合法 src 的 img', w => {
+        lacks(w.sanitizeHtml('<img src="x" onerror="alert(1)">'), '<img');
+    });
+
+    // ---------- 文本规范化 ----------
+    T('toPlainText 不执行 onerror', w => {
+        let fired = false;
+        w.__xss = 0;
+        const text = w.toPlainText('<img src="x" onerror="window.__xss=1">hello');
+        has(text, 'hello');
+        fired = !!w.__xss;
+        ok(!fired, 'onerror 不应被执行');
+        delete w.__xss;
+    });
+
+    T('toPlainText 纯文本原样返回', w => {
+        eq(w.toPlainText('纯文本内容'), '纯文本内容');
+    });
+
+    T('normalizeToHtml 纯文本转段落', w => {
+        has(w.normalizeToHtml('第一行\n第二行'), '<p>第一行</p>');
+    });
+
+    T('normalizeToHtml 消毒 HTML', w => {
+        lacks(w.normalizeToHtml('<p>safe</p><script>bad()<\/script>'), 'script');
+    });
+
+    T('normalizeToHtml 兼容旧版 TipTap JSON', w => {
+        const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '旧数据' }] }] };
+        has(w.normalizeToHtml(doc), '旧数据');
+    });
+
+    T('sanitizeTitle 去控制字符并截断', w => {
+        eq(w.sanitizeTitle('  ab  '), 'ab');
+        eq(w.sanitizeTitle('  a\u0000b  '), 'a b');
+        eq(w.sanitizeTitle('x'.repeat(500)).length, 200);
+    });
+
+    T('sanitizeColor 只接受 #RRGGBB', w => {
+        eq(w.sanitizeColor('#5D5CDE'), '#5D5CDE');
+        eq(w.sanitizeColor('red;background:url(x)'), '#5D5CDE');
+    });
+
+    T('hexToRgba 生成合法 rgba', w => {
+        eq(w.hexToRgba('#5D5CDE', 0.1), 'rgba(93,92,222,0.1)');
+    });
+
+    // ---------- Markdown 导出 ----------
+    T('htmlToMarkdown 保留标题层级', w => {
+        eq(w.htmlToMarkdown('<h1>标题</h1>'), '# 标题');
+        eq(w.htmlToMarkdown('<h2>二级</h2>'), '## 二级');
+        eq(w.htmlToMarkdown('<h3>三级</h3>'), '### 三级');
+    });
+
+    T('htmlToMarkdown 保留加粗/斜体/删除线', w => {
+        eq(w.htmlToMarkdown('<p><strong>粗</strong></p>'), '**粗**');
+        eq(w.htmlToMarkdown('<p><em>斜</em></p>'), '*斜*');
+        eq(w.htmlToMarkdown('<p><del>删</del></p>'), '~~删~~');
+    });
+
+    T('htmlToMarkdown 保留列表', w => {
+        eq(w.htmlToMarkdown('<ul><li>一</li><li>二</li></ul>'), '- 一\n- 二');
+        eq(w.htmlToMarkdown('<ol><li>甲</li></ol>'), '1. 甲');
+    });
+
+    T('htmlToMarkdown 保留代码块与链接', w => {
+        has(w.htmlToMarkdown('<pre>code()</pre>'), '```');
+        has(w.htmlToMarkdown('<p><a href="https://x.com">t</a></p>'), '[t](https://x.com)');
+    });
+
+    T('htmlToMarkdown 保留表格', w => {
+        const md = w.htmlToMarkdown('<table><tr><th>A</th></tr><tr><td>B</td></tr></table>');
+        has(md, '| A |');
+        has(md, '| --- |');
+        has(md, '| B |');
+    });
+
+    T('htmlToMarkdown 空输入返回空串', w => {
+        eq(w.htmlToMarkdown(''), '');
+        eq(w.htmlToMarkdown(null), '');
+    });
+
+    T('sanitizeHtml 保留表格排版样式', w => {
+        const out = w.sanitizeHtml('<table style="border-collapse:collapse;width:100%"><tr><td style="border:1px solid #D0D0D0;padding-left:8px">x</td></tr></table>');
+        has(out, 'border-collapse:collapse');
+        has(out, 'width:100%');
+        has(out, 'border:1px solid #D0D0D0');
+    });
+
+    T('sanitizeHtml 拦截非法 border 值', w => {
+        lacks(w.sanitizeHtml('<span style="border:1px solid url(javascript:1)">x</span>'), 'url(');
+    });
+
+    T('sanitizeHtml 按解码后大小判定 base64 图片', w => {
+        const big = 'iVBORw0KGgoAAAANSUhEUg==' + 'A'.repeat(2 * 1024 * 1024);
+        has(w.sanitizeHtml('<img src="data:image/png;base64,' + big + '">'), 'data:image/png');
+        const huge = 'iVBORw0KGgoAAAANSUhEUg==' + 'A'.repeat(4 * 1024 * 1024);
+        lacks(w.sanitizeHtml('<img src="data:image/png;base64,' + huge + '">'), 'data:image/png');
+    });
+
+    T('htmlToMarkdown 兼容旧版 TipTap JSON', w => {
+        const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '旧数据' }] }] };
+        const md = w.htmlToMarkdown(w.normalizeToHtml(doc));
+        has(md, '旧数据');
+        lacks(md, '[object Object]');
+    });
+
+    T('htmlToMarkdown 的 hr 用 ---（与笔记分隔符 *** 不冲突）', w => {
+        eq(w.htmlToMarkdown('<hr>'), '---');
+    });
+
+    // ---------- 时间戳 ----------
+    T('formatTimestamp 支持常用格式', w => {
+        const fmt = w.eval('App.prototype.formatTimestamp');
+        const d = new Date(2024, 0, 2, 3, 4, 5);
+        eq(fmt.call({}, d, 'YYYY年MM月DD日 HH:mm:ss'), '2024年01月02日 03:04:05');
+        eq(fmt.call({}, d, 'YYYY-MM-DD'), '2024-01-02');
+        eq(fmt.call({}, d, 'ddd'), '星期二');
+    });
+
+    // ---------- 命名空间隔离 ----------
+    T('存储键按应用路径隔离', w => {
+        ok(/::/.test(w.eval('LS_PREFIX')), 'LS_PREFIX 应带命名空间');
+        ok(/::SimpleNotesDB$/.test(w.eval('DB_NAME')), 'DB_NAME 应带命名空间');
+    });
+
+    T('Store 读写使用命名空间键', w => {
+        const key = w.eval("Store.key('__selftest__')");
+        ok(key.indexOf(w.eval('LS_PREFIX')) === 0, '键应以 LS_PREFIX 开头：' + key);
+    });
+
+    render();
+    stateEl.textContent = '完成';
+}
+
+// 被测页面加载完成后即可运行
+frame.addEventListener('load', () => {
+    stateEl.textContent = '被测页面已就绪';
+    runTests();
+});
+document.getElementById('runBtn').addEventListener('click', runTests);
+document.getElementById('reloadBtn').addEventListener('click', () => {
+    stateEl.textContent = '重新加载中…';
+    results.length = 0;
+    render();
+    frame.contentWindow.location.reload();
+});
+</script>
+</body>
+</html>
