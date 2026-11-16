@@ -192,6 +192,21 @@ function runTests() {
         eq(w.sanitizeTitle('a\r\nb'), 'a  b');
     });
 
+    // 手机聚焦空编辑器时输入法会塞入空格/零宽字符/<br>，判空必须看「实质内容」。
+    // 你的诊断日志正是「快照正文长度=0 但正文相同=false」，根因就在这里。
+    T('getEditorHtml 把空白/零宽字符/<br> 视为空正文', w => {
+        const App = w.eval('App');
+        const ed = w.document.getElementById('rich-editor');
+        const save = ed.innerHTML;
+        [['<p>&nbsp;</p>', 'nbsp'], ['<p>\u200b</p>', '零宽'], ['<br>', 'br'], ['<p><br></p>', '空段落']].forEach(([html, name]) => {
+            ed.innerHTML = html;
+            eq(App.prototype.getEditorHtml.call({ els: { richEditor: ed }, sanitizeHtml: w.sanitizeHtml }), '', name + ' 应算空正文');
+        });
+        ed.innerHTML = '<img src="data:image/png;base64,iVBORw0KGgo=">';
+        ok(App.prototype.getEditorHtml.call({ els: { richEditor: ed }, sanitizeHtml: w.sanitizeHtml }).indexOf('<img') >= 0, '图片算实质内容');
+        ed.innerHTML = save;
+    });
+
     T('normalizeToHtml 幂等（打开笔记不会改变内容）', w => {
         const cases = ['<p>x</p>', '纯文本', '<ul><li>一</li></ul>', '<table><tr><td>a</td></tr></table>'];
         cases.forEach(c => {

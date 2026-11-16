@@ -2697,12 +2697,19 @@
                 });
             }
 
-            // 取当前编辑器内容（HTML，空则返回空串）
+            // 取当前编辑器内容（HTML）。判空必须看「实质内容」而不是 innerText：
+            // 手机聚焦空编辑器时，输入法/浏览器会塞进空格、零宽字符或 <br>，
+            // 若据此判定非空，仅仅打开笔记就会被当成改过、把 modified 时间顶成当前时刻。
             getEditorHtml() {
                 const ed = this.els.richEditor;
-                const plain = ed.innerText != null ? ed.innerText : ed.textContent;
-                if (!(plain || '').trim()) return '';
-                return sanitizeHtml(ed.innerHTML);
+                const html = sanitizeHtml(ed.innerHTML);
+                if (!html) return '';
+                const probe = document.createElement('div');
+                probe.innerHTML = html;
+                const text = (probe.textContent || '').replace(/[\s\u00a0\u200b\u200c\u200d\ufeff]/g, '');
+                // 只有既没有可见文字、也没有图片的编辑器才算空
+                if (!text && !probe.querySelector('img')) return '';
+                return html;
             }
 
             setEditorHtml(html) {
@@ -2769,7 +2776,13 @@
 
             scheduleDraft() {
                 if (this._draftTimer) return;
-                this._draftTimer = setTimeout(() => { this._draftTimer = null; this.writeDraft(); }, 800);
+                this._draftTimer = setTimeout(() => {
+                    this._draftTimer = null;
+                    // 没有真实改动就不写草稿：单纯聚焦派发的 input 事件不该产生
+                    // 时间戳全新的草稿，否则下次打开会弹出「恢复草稿」。
+                    if (!this._hasUnsavedChanges()) return;
+                    this.writeDraft();
+                }, 800);
             }
 
             async maybeRestoreDraft(id, savedUpdatedAt, session) {
@@ -2844,7 +2857,7 @@
                 this._ensureCategorySelected(category);
                 this._savedRange = null;
                 this.lastSavedContent = this.getEditorHtml();
-                this.lastSavedTitle = title.trim();
+                this.lastSavedTitle = sanitizeTitle(this.els.noteTitleInput.value.trim());
                 this.lastSavedCategory = category;
                 this.debugLog(`openEditor id=${id} 快照标题="${this.lastSavedTitle}" 快照分类="${this.lastSavedCategory}" 快照正文长度=${this.lastSavedContent.length}`);
                 this._updateCharCount();
@@ -2936,8 +2949,8 @@
                 this.debugLog(`saveNote force=${force} 正文相同=${content === this.lastSavedContent}`
                     + ` 标题相同=${title === (this.lastSavedTitle || '未命名笔记')}`
                     + ` 分类相同=${category === this.lastSavedCategory}`
-                    + ` | 当前标题="${title}" 快照标题="${this.lastSavedTitle}"`
-                    + ` | 当前分类="${category}" 快照分类="${this.lastSavedCategory}"`);
+                    + ` | 快照正文="${this.lastSavedContent}" 当前正文="${content}"`
+                    + ` | 编辑器HTML="${this.els.richEditor.innerHTML}"`);
                 if (unchanged) {
                     if (force) {
                         this._showSaveStatus('已保存');
@@ -2976,7 +2989,7 @@
                         this.lastSavedContent = content;
                         // 记录真正写进库里的值：不能用输入框的当前值，
                         // 否则 await 期间的输入会被当成已保存，丢掉这次改动。
-                        this.lastSavedTitle = this.els.noteTitleInput.value.trim();
+                        this.lastSavedTitle = sanitizeTitle(this.els.noteTitleInput.value.trim());
                         this.lastSavedCategory = category;
                         if (isNew) this.editingId = noteId;
                         this._showSaveStatus('已保存');
