@@ -1699,9 +1699,9 @@
                 this.lastSavedContent = '';
                 this.lastSavedTitle = '';
                 this.lastSavedCategory = '';
-                // 脏标记：只有用户真的动过内容才允许写库。
-                // 仅靠「快照对比」会因标题归一化、分类重建等边界情况误判为已修改，
-                // 进而在仅仅查看笔记时也刷新 updatedAt（修改时间被顶到当前时刻）。
+                // ?debug=1 打开诊断面板：记录每次保存判定的具体字段差异，
+                // 仅在排查「查看笔记被误判为已修改」时使用，普通用户无感。
+                this._debug = new URLSearchParams(location.search).has('debug');
                 this._savedRange = null;
                 this._draftTimer = null;
                 // 图片查看器状态：scale/x/y 为当前缩放与位移
@@ -2323,7 +2323,8 @@
                 });
 
                 const ed = this.els.richEditor;
-                ed.addEventListener('input', () => {
+                ed.addEventListener('input', (e) => {
+                    this.debugLog(`editor input inputType=${e.inputType || '?'} data=${JSON.stringify(e.data || '')}`);
                     this.triggerAutoSave();
                     this._updateCharCount();
                 });
@@ -2743,15 +2744,14 @@
 
             // 当前编辑器取值与快照的差异，统一在这里算，saveNote / 草稿 / 脏标记共用。
             _noteValues() {
-                const rawTitle = this.els.noteTitleInput.value.trim();
-                const title = sanitizeTitle(rawTitle) || '未命名笔记';
-                const category = this.els.categorySelect.value || 'daily';
+                const title = sanitizeTitle(this.els.noteTitleInput.value.trim()) || '未命名笔记';
+                const category = this.els.categorySelect.value;
                 const content = this.getEditorHtml();
                 return {
                     title, category, content,
                     changed: content !== this.lastSavedContent
                         || title !== (this.lastSavedTitle || '未命名笔记')
-                        || category !== (this.lastSavedCategory || 'daily')
+                        || category !== this.lastSavedCategory
                 };
             }
 
@@ -2769,15 +2769,7 @@
 
             scheduleDraft() {
                 if (this._draftTimer) return;
-                this._draftTimer = setTimeout(() => {
-                    this._draftTimer = null;
-                    // ★ 没有真实改动就绝不写草稿。手机上单纯聚焦编辑器、输入法
-                    // 弹出/收起都会派发 input 事件；若据此写草稿，草稿的时间戳会
-                    // 永远新于笔记的 updatedAt，下次打开就弹出「恢复草稿」，
-                    // 用户一点「恢复」笔记就被改写、修改时间被顶成当前时刻。
-                    if (!this._hasUnsavedChanges()) return;
-                    this.writeDraft();
-                }, 800);
+                this._draftTimer = setTimeout(() => { this._draftTimer = null; this.writeDraft(); }, 800);
             }
 
             async maybeRestoreDraft(id, savedUpdatedAt, session) {
@@ -2788,24 +2780,6 @@
                 if (!draft.content && !draft.title) { this.clearDraft(id); return; }
                 const base = savedUpdatedAt ? Date.parse(savedUpdatedAt) : 0;
                 if (!(draft.time > base + 1000)) { this.clearDraft(id); return; }
-                // 草稿内容与笔记现状完全相同 → 没有可恢复的东西，直接丢弃，不要弹窗。
-                // 这样即使旧版本写过「空改动草稿」，也不会诱导用户去「恢复」而改写笔记。
-                if (id) {
-                    let current = null;
-                    try { current = await this.db.getNote(id); } catch (e) { current = null; }
-                    if (current) {
-                        const draftHtml = normalizeToHtml(draft.content || '');
-                        const currentHtml = normalizeToHtml(current.content || '');
-                        const draftTitle = sanitizeTitle(draft.title || '');
-                        const currentTitle = sanitizeTitle(current.title || '');
-                        const draftCat = draft.category || 'daily';
-                        const currentCat = current.category || 'daily';
-                        if (draftHtml === currentHtml && draftTitle === currentTitle && draftCat === currentCat) {
-                            this.clearDraft(id);
-                            return;
-                        }
-                    }
-                }
                 // 新建笔记的草稿超过 24 小时不再提示，避免隔天误恢复旧内容
                 if (!id && Date.now() - draft.time > 24 * 3600 * 1000) { this.clearDraft(id); return; }
                 if (session !== undefined && session !== this._session) return;
@@ -2870,11 +2844,9 @@
                 this._ensureCategorySelected(category);
                 this._savedRange = null;
                 this.lastSavedContent = this.getEditorHtml();
-                // ★ 快照要取自 <input> 回填后的真实取值，再走与 saveNote 相同的清洗。
-                // <input> 会吞掉换行等控制字符，直接对库里的原始标题做 sanitizeTitle
-                // 会与输入框的取值不一致，打开笔记就被判成「已修改」。
-                this.lastSavedTitle = sanitizeTitle(this.els.noteTitleInput.value.trim());
-                this.lastSavedCategory = this.els.categorySelect.value;
+                this.lastSavedTitle = title.trim();
+                this.lastSavedCategory = category;
+                this.debugLog(`openEditor id=${id} 快照标题="${this.lastSavedTitle}" 快照分类="${this.lastSavedCategory}" 快照正文长度=${this.lastSavedContent.length}`);
                 this._updateCharCount();
                 // 显示笔记真实的最后修改时间，而不是「打开笔记的此刻」
                 this.els.lastEditTime.textContent = (id && savedUpdatedAt)
@@ -2938,6 +2910,20 @@
                 if (this.pendingUpdate) { this.pendingUpdate = false; location.reload(); }
             }
 
+            debugLog(msg) {
+                if (!this._debug) return;
+                try { console.log('[NOTE DEBUG]', msg); } catch (e) {}
+                let box = document.getElementById('debugBox');
+                if (!box) {
+                    box = document.createElement('div');
+                    box.id = 'debugBox';
+                    box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;max-height:38vh;overflow:auto;background:rgba(0,0,0,.88);color:#7CFC7C;font:11px/1.45 monospace;padding:8px 10px;white-space:pre-wrap;word-break:break-all';
+                    document.body.appendChild(box);
+                }
+                box.textContent += new Date().toLocaleTimeString('zh-CN') + '  ' + msg + '\n';
+                box.scrollTop = box.scrollHeight;
+            }
+
             async saveNote(force = false, session = this._session) {
                 // 空白的新笔记不落库：否则「新建后一字未写」也会留下一条空笔记
                 if (!this.editingId && !this.els.noteTitleInput.value.trim() && !this.getEditorHtml()) {
@@ -2945,10 +2931,13 @@
                     return;
                 }
                 const { title, category, content, changed } = this._noteValues();
-                // ★ 唯一判据是「当前值是否与快照不同」——不看收到过多少 input 事件。
-                // 手机输入法会临时插入组合文本再撤销，若用「事件来过」当脏标记，
-                // 内容明明已复原却仍会重写笔记、把 modified 时间顶成当前时刻。
+                // 与 2163d2f 一致：只按快照对比决定是否写库
                 const unchanged = !changed;
+                this.debugLog(`saveNote force=${force} 正文相同=${content === this.lastSavedContent}`
+                    + ` 标题相同=${title === (this.lastSavedTitle || '未命名笔记')}`
+                    + ` 分类相同=${category === this.lastSavedCategory}`
+                    + ` | 当前标题="${title}" 快照标题="${this.lastSavedTitle}"`
+                    + ` | 当前分类="${category}" 快照分类="${this.lastSavedCategory}"`);
                 if (unchanged) {
                     if (force) {
                         this._showSaveStatus('已保存');
@@ -2976,6 +2965,7 @@
 
                 try {
                     await this.db.saveNote(noteData);
+                    this.debugLog(`>>> 实际写库 updatedAt=${noteData.updatedAt} 标题="${title}"`);
                     // 草稿的清理与保存结果绑定，与会话无关，必须执行
                     this.clearDraft(noteId);
                     this.clearDraft('new');
@@ -2986,7 +2976,7 @@
                         this.lastSavedContent = content;
                         // 记录真正写进库里的值：不能用输入框的当前值，
                         // 否则 await 期间的输入会被当成已保存，丢掉这次改动。
-                        this.lastSavedTitle = title;
+                        this.lastSavedTitle = this.els.noteTitleInput.value.trim();
                         this.lastSavedCategory = category;
                         if (isNew) this.editingId = noteId;
                         this._showSaveStatus('已保存');
