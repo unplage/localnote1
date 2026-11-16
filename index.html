@@ -2736,11 +2736,24 @@
                 }
             }
 
-            // 草稿是否需要写入：标题、正文、分类三者任一变化都要写
+            // 内容是否与刚打开（或上次保存）时不同：标题、正文、分类任一变化都算。
+            // 必须和 saveNote 用完全相同的口径，否则草稿/保存的判断会互相打架。
             _hasUnsavedChanges() {
-                return this.getEditorHtml() !== this.lastSavedContent
-                    || this.els.noteTitleInput.value.trim() !== (this.lastSavedTitle || '')
-                    || this.els.categorySelect.value !== (this.lastSavedCategory || '');
+                return this._noteValues().changed;
+            }
+
+            // 当前编辑器取值与快照的差异，统一在这里算，saveNote / 草稿 / 脏标记共用。
+            _noteValues() {
+                const rawTitle = this.els.noteTitleInput.value.trim();
+                const title = sanitizeTitle(rawTitle) || '未命名笔记';
+                const category = this.els.categorySelect.value || 'daily';
+                const content = this.getEditorHtml();
+                return {
+                    title, category, content,
+                    changed: content !== this.lastSavedContent
+                        || title !== (this.lastSavedTitle || '未命名笔记')
+                        || category !== (this.lastSavedCategory || 'daily')
+                };
             }
 
             flushDraftSync() {
@@ -2827,15 +2840,15 @@
                 if (session !== this._session) return;
 
                 this.els.richEditor.removeAttribute('aria-busy');
-                // 标题先归一化再回填：<input> 会吞掉换行等控制字符，
-                // 快照若保留原始标题，下次保存必然被判为「已修改」。
-                const safeTitle = sanitizeTitle(title);
-                this.els.noteTitleInput.value = safeTitle;
+                this.els.noteTitleInput.value = title;
                 this.setEditorHtml(id ? normalizeToHtml(content) : '');
                 this._ensureCategorySelected(category);
                 this._savedRange = null;
                 this.lastSavedContent = this.getEditorHtml();
-                this.lastSavedTitle = safeTitle;
+                // ★ 快照要取自 <input> 回填后的真实取值，再走与 saveNote 相同的清洗。
+                // <input> 会吞掉换行等控制字符，直接对库里的原始标题做 sanitizeTitle
+                // 会与输入框的取值不一致，打开笔记就被判成「已修改」。
+                this.lastSavedTitle = sanitizeTitle(this.els.noteTitleInput.value.trim());
                 this.lastSavedCategory = this.els.categorySelect.value;
                 this._dirty = false;
                 this._updateCharCount();
@@ -2903,25 +2916,16 @@
             }
 
             async saveNote(force = false, session = this._session) {
-                const rawTitle = this.els.noteTitleInput.value.trim();
-                const rawContent = this.getEditorHtml();
                 // 空白的新笔记不落库：否则「新建后一字未写」也会留下一条空笔记
-                if (!this.editingId && !rawTitle && !rawContent) {
+                if (!this.editingId && !this.els.noteTitleInput.value.trim() && !this.getEditorHtml()) {
                     if (force) this._showSaveStatus('已保存');
                     return;
                 }
-                const title = sanitizeTitle(rawTitle) || '未命名笔记';
-                const category = this.els.categorySelect.value || 'daily';
-                const content = rawContent;
-
-                // 是否真的改过：
-                //   1) _dirty —— 用户有过任何输入（正文/标题/分类/恢复草稿）
-                //   2) 快照对比 —— 兜底，防止个别浏览器不派发 input 时漏存
-                // 两者都没变化时直接返回：仅仅查看笔记绝不能刷新 updatedAt。
-                const unchanged = !this._dirty
-                    && content === this.lastSavedContent
-                    && title === (this.lastSavedTitle || '未命名笔记')
-                    && category === (this.lastSavedCategory || 'daily');
+                const { title, category, content, changed } = this._noteValues();
+                // ★ 必须同时满足「内容确实不同」且「用户确实动过」才算需要保存。
+                // 只看 changed：输入法自动插入又自动撤回的内容会「凭空」出现/消失；
+                // 只看 _dirty：单纯聚焦派发的空 input 事件会刷新 modified 时间。
+                const unchanged = !changed && !this._dirty;
                 if (unchanged) {
                     if (force) {
                         this._showSaveStatus('已保存');
@@ -2961,11 +2965,8 @@
                         // 否则 await 期间的输入会被当成已保存，丢掉这次改动。
                         this.lastSavedTitle = title;
                         this.lastSavedCategory = category;
-                        // 保存期间用户又改了内容的话，脏标记继续保持
-                        const curTitle = sanitizeTitle(this.els.noteTitleInput.value.trim()) || '未命名笔记';
-                        this._dirty = this.getEditorHtml() !== content
-                            || curTitle !== title
-                            || (this.els.categorySelect.value || 'daily') !== category;
+                        // 保存期间若用户又改了内容，保持脏标记，下次自动保存会带上
+                        this._dirty = this._noteValues().changed;
                         if (isNew) this.editingId = noteId;
                         this._showSaveStatus('已保存');
                         this.els.lastEditTime.textContent = this._formatEditTime(noteData.updatedAt);
@@ -3022,8 +3023,12 @@
             }
 
             triggerAutoSave() {
-                // 用户确实动过内容：置脏标记，保证这次改动一定被写库
-                this._dirty = true;
+                // ★ 脏标记必须按「实际内容是否变化」计算，不能只要收到 input 事件就置位。
+                // 手机输入法（尤其中文/日文 IME）在仅仅聚焦编辑器、切换输入法、
+                // 提交空候选时也会派发 input 事件；若据此置脏，3 秒后的自动保存会
+                // 把一条没改过的笔记重新写库，updatedAt 被顶成当前时刻。
+                const changed = this._hasUnsavedChanges();
+                this._dirty = this._dirty || changed;
                 clearTimeout(this.autoSaveTimer);
                 this.els.autoSaveStatus.textContent = '编辑中...';
                 this.els.autoSaveStatus.classList.add('show');
