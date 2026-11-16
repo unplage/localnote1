@@ -16,7 +16,7 @@ const BASE_PATH = self.location.pathname.replace(/[^/]+$/, '');
 // 把作用域路径转成安全的标识片段（'/pwa1/' -> '-pwa1-'）
 const PROJECT_SLUG = BASE_PATH.replace(/\//g, '-');
 // 缓存版本：静态资源或逻辑变化时 +1
-const CACHE_VERSION = 17;
+const CACHE_VERSION = 18;
 // 本应用缓存名的公共前缀（例如 'pwa-cache-pwa1-'）
 const CACHE_PREFIX = `pwa-cache${PROJECT_SLUG}`;
 // 当前使用的缓存名（例如 'pwa-cache-pwa1-v15'）

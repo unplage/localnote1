@@ -1702,7 +1702,6 @@
                 // 脏标记：只有用户真的动过内容才允许写库。
                 // 仅靠「快照对比」会因标题归一化、分类重建等边界情况误判为已修改，
                 // 进而在仅仅查看笔记时也刷新 updatedAt（修改时间被顶到当前时刻）。
-                this._dirty = false;
                 this._savedRange = null;
                 this._draftTimer = null;
                 // 图片查看器状态：scale/x/y 为当前缩放与位移
@@ -2770,7 +2769,15 @@
 
             scheduleDraft() {
                 if (this._draftTimer) return;
-                this._draftTimer = setTimeout(() => { this._draftTimer = null; this.writeDraft(); }, 800);
+                this._draftTimer = setTimeout(() => {
+                    this._draftTimer = null;
+                    // ★ 没有真实改动就绝不写草稿。手机上单纯聚焦编辑器、输入法
+                    // 弹出/收起都会派发 input 事件；若据此写草稿，草稿的时间戳会
+                    // 永远新于笔记的 updatedAt，下次打开就弹出「恢复草稿」，
+                    // 用户一点「恢复」笔记就被改写、修改时间被顶成当前时刻。
+                    if (!this._hasUnsavedChanges()) return;
+                    this.writeDraft();
+                }, 800);
             }
 
             async maybeRestoreDraft(id, savedUpdatedAt, session) {
@@ -2781,6 +2788,24 @@
                 if (!draft.content && !draft.title) { this.clearDraft(id); return; }
                 const base = savedUpdatedAt ? Date.parse(savedUpdatedAt) : 0;
                 if (!(draft.time > base + 1000)) { this.clearDraft(id); return; }
+                // 草稿内容与笔记现状完全相同 → 没有可恢复的东西，直接丢弃，不要弹窗。
+                // 这样即使旧版本写过「空改动草稿」，也不会诱导用户去「恢复」而改写笔记。
+                if (id) {
+                    let current = null;
+                    try { current = await this.db.getNote(id); } catch (e) { current = null; }
+                    if (current) {
+                        const draftHtml = normalizeToHtml(draft.content || '');
+                        const currentHtml = normalizeToHtml(current.content || '');
+                        const draftTitle = sanitizeTitle(draft.title || '');
+                        const currentTitle = sanitizeTitle(current.title || '');
+                        const draftCat = draft.category || 'daily';
+                        const currentCat = current.category || 'daily';
+                        if (draftHtml === currentHtml && draftTitle === currentTitle && draftCat === currentCat) {
+                            this.clearDraft(id);
+                            return;
+                        }
+                    }
+                }
                 // 新建笔记的草稿超过 24 小时不再提示，避免隔天误恢复旧内容
                 if (!id && Date.now() - draft.time > 24 * 3600 * 1000) { this.clearDraft(id); return; }
                 if (session !== undefined && session !== this._session) return;
@@ -2850,7 +2875,6 @@
                 // 会与输入框的取值不一致，打开笔记就被判成「已修改」。
                 this.lastSavedTitle = sanitizeTitle(this.els.noteTitleInput.value.trim());
                 this.lastSavedCategory = this.els.categorySelect.value;
-                this._dirty = false;
                 this._updateCharCount();
                 // 显示笔记真实的最后修改时间，而不是「打开笔记的此刻」
                 this.els.lastEditTime.textContent = (id && savedUpdatedAt)
@@ -2901,7 +2925,6 @@
                 this.editingId = null;
                 this._newNoteId = null;
                 this._savedRange = null;
-                this._dirty = false;
                 this.els.timestampToolbar.style.display = 'none';
                 const scrollY = parseInt(document.body.style.top || '0') * -1;
                 document.body.style.position = '';
@@ -2922,10 +2945,10 @@
                     return;
                 }
                 const { title, category, content, changed } = this._noteValues();
-                // ★ 必须同时满足「内容确实不同」且「用户确实动过」才算需要保存。
-                // 只看 changed：输入法自动插入又自动撤回的内容会「凭空」出现/消失；
-                // 只看 _dirty：单纯聚焦派发的空 input 事件会刷新 modified 时间。
-                const unchanged = !changed && !this._dirty;
+                // ★ 唯一判据是「当前值是否与快照不同」——不看收到过多少 input 事件。
+                // 手机输入法会临时插入组合文本再撤销，若用「事件来过」当脏标记，
+                // 内容明明已复原却仍会重写笔记、把 modified 时间顶成当前时刻。
+                const unchanged = !changed;
                 if (unchanged) {
                     if (force) {
                         this._showSaveStatus('已保存');
@@ -2965,8 +2988,6 @@
                         // 否则 await 期间的输入会被当成已保存，丢掉这次改动。
                         this.lastSavedTitle = title;
                         this.lastSavedCategory = category;
-                        // 保存期间若用户又改了内容，保持脏标记，下次自动保存会带上
-                        this._dirty = this._noteValues().changed;
                         if (isNew) this.editingId = noteId;
                         this._showSaveStatus('已保存');
                         this.els.lastEditTime.textContent = this._formatEditTime(noteData.updatedAt);
@@ -3023,12 +3044,8 @@
             }
 
             triggerAutoSave() {
-                // ★ 脏标记必须按「实际内容是否变化」计算，不能只要收到 input 事件就置位。
-                // 手机输入法（尤其中文/日文 IME）在仅仅聚焦编辑器、切换输入法、
-                // 提交空候选时也会派发 input 事件；若据此置脏，3 秒后的自动保存会
-                // 把一条没改过的笔记重新写库，updatedAt 被顶成当前时刻。
-                const changed = this._hasUnsavedChanges();
-                this._dirty = this._dirty || changed;
+                // ★ 输入法在单纯聚焦时也会派发 input 事件（空事件 / 组合文本临时插入）。
+                // 是否保存、是否写草稿，一律按「实际取值是否变化」判断，不能按事件次数。
                 clearTimeout(this.autoSaveTimer);
                 this.els.autoSaveStatus.textContent = '编辑中...';
                 this.els.autoSaveStatus.classList.add('show');
