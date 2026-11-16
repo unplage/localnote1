@@ -185,6 +185,33 @@ function runTests() {
         eq(w.sanitizeTitle('x'.repeat(500)).length, 200);
     });
 
+    // 标题归一化必须与 <input> 的行为一致：
+    // input 会吞掉换行，若标题快照保留原始换行，查看笔记也会被判定为「已修改」。
+    T('sanitizeTitle 把换行替换成空格（与 input 的取值一致）', w => {
+        eq(w.sanitizeTitle('第一行\n第二行'), '第一行 第二行');
+        eq(w.sanitizeTitle('a\r\nb'), 'a  b');
+    });
+
+    T('normalizeToHtml 幂等（打开笔记不会改变内容）', w => {
+        const cases = ['<p>x</p>', '纯文本', '<ul><li>一</li></ul>', '<table><tr><td>a</td></tr></table>'];
+        cases.forEach(c => {
+            const once = w.normalizeToHtml(c);
+            eq(w.normalizeToHtml(once), once, '二次规范化结果不一致：' + c);
+        });
+    });
+
+    T('图片查看器元素存在（可全屏缩放查看图片）', w => {
+        ok(w.document.getElementById('imageViewer'), '缺少图片查看器容器');
+        ok(w.document.getElementById('imageViewerImg'), '缺少查看器图片元素');
+        ok(w.document.getElementById('imageViewerClose'), '缺少关闭按钮');
+    });
+
+    T('编辑器内的图片不可拖拽（避免误拖拽丢失图片）', w => {
+        const div = w.document.createElement('div');
+        div.innerHTML = '<img src="data:image/png;base64,iVBORw0KGgo=">';
+        ok('draggable' in div.firstChild, 'img 应支持 draggable 属性');
+    });
+
     T('sanitizeColor 只接受 #RRGGBB', w => {
         eq(w.sanitizeColor('#5D5CDE'), '#5D5CDE');
         eq(w.sanitizeColor('red;background:url(x)'), '#5D5CDE');

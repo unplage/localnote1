@@ -128,6 +128,21 @@
         .editor-footer{padding:8px 16px;border-top:1px solid var(--border-color);flex-shrink:0;display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)}
         /* ===== 编辑器打开时隐藏底层内容 ===== */
         body.editor-open #appContent{visibility:hidden}
+        /* ===== 图片查看器（全屏缩放） ===== */
+        .image-viewer{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.93);display:none;align-items:center;justify-content:center;touch-action:none;overscroll-behavior:contain;padding:20px}
+        .image-viewer.open{display:flex;animation:imgViewerIn .16s ease}
+        body.image-viewer-open{overflow:hidden}
+        @keyframes imgViewerIn{from{opacity:0}to{opacity:1}}
+        .image-viewer img{max-width:100%;max-height:100%;transform-origin:center center;will-change:transform;user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none;object-fit:contain}
+        .image-viewer-btn{position:absolute;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;padding:0}
+        .image-viewer-btn:active{background:rgba(255,255,255,.32)}
+        .image-viewer-close{top:calc(12px + var(--safe-area-top,0px));right:12px}
+        .image-viewer-zoom-in{right:12px;bottom:calc(28px + var(--safe-area-bottom,0px))}
+        .image-viewer-zoom-out{right:60px;bottom:calc(28px + var(--safe-area-bottom,0px))}
+        .image-viewer-hint{position:absolute;left:0;right:0;bottom:calc(16px + var(--safe-area-bottom,0px));text-align:center;color:rgba(255,255,255,.7);font-size:12px;pointer-events:none;transition:opacity .4s}
+        .image-viewer-hint.hide{opacity:0}
+        /* 编辑器里的图片：可点击放大 */
+        .rich-editor img{cursor:zoom-in}
         /* ===== 通用按钮 ===== */
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border:1px solid transparent;border-radius:var(--radius-sm);font-size:15px;font-weight:500;cursor:pointer;transition:opacity .15s,background .2s;background:var(--primary-color);color:#fff}
         .btn:hover{opacity:.9}
@@ -305,6 +320,15 @@
             <span id="charCount">0 字</span>
             <span id="lastEditTime"></span>
         </div>
+    </div>
+
+    <!-- ===== 图片查看器（全屏查看 + 双指缩放） ===== -->
+    <div class="image-viewer" id="imageViewer" role="dialog" aria-modal="true" aria-label="图片查看器">
+        <img id="imageViewerImg" alt="" draggable="false">
+        <button type="button" class="image-viewer-btn image-viewer-close" id="imageViewerClose" aria-label="关闭图片"><i class="fas fa-times" aria-hidden="true"></i></button>
+        <button type="button" class="image-viewer-btn image-viewer-zoom-in" id="imageViewerZoomIn" aria-label="放大"><i class="fas fa-search-plus" aria-hidden="true"></i></button>
+        <button type="button" class="image-viewer-btn image-viewer-zoom-out" id="imageViewerZoomOut" aria-label="缩小"><i class="fas fa-search-minus" aria-hidden="true"></i></button>
+        <div class="image-viewer-hint" id="imageViewerHint">点击放大 · 双指缩放 · 双指内收关闭</div>
     </div>
 
     <!-- ===== 模态框：分类管理 ===== -->
@@ -1675,8 +1699,15 @@
                 this.lastSavedContent = '';
                 this.lastSavedTitle = '';
                 this.lastSavedCategory = '';
+                // 脏标记：只有用户真的动过内容才允许写库。
+                // 仅靠「快照对比」会因标题归一化、分类重建等边界情况误判为已修改，
+                // 进而在仅仅查看笔记时也刷新 updatedAt（修改时间被顶到当前时刻）。
+                this._dirty = false;
                 this._savedRange = null;
                 this._draftTimer = null;
+                // 图片查看器状态：scale/x/y 为当前缩放与位移
+                this._iv = null;
+                this._imageHintTimer = null;
                 this.settings = {
                     autoSaveInterval: 3000,
                     showAutoSaveStatus: true,
@@ -1749,6 +1780,12 @@
                     cancelClearData: document.getElementById('cancelClearData'),
                     confirmClearData: document.getElementById('confirmClearData'),
                     richEditor: document.getElementById('rich-editor'),
+                    imageViewer: document.getElementById('imageViewer'),
+                    imageViewerImg: document.getElementById('imageViewerImg'),
+                    imageViewerClose: document.getElementById('imageViewerClose'),
+                    imageViewerZoomIn: document.getElementById('imageViewerZoomIn'),
+                    imageViewerZoomOut: document.getElementById('imageViewerZoomOut'),
+                    imageViewerHint: document.getElementById('imageViewerHint'),
                     formatToolbar: document.getElementById('formatToolbar'),
                     foreColorInput: document.getElementById('foreColorInput'),
                     hiliteColorInput: document.getElementById('hiliteColorInput'),
@@ -1829,6 +1866,7 @@
                 this.bindGlobalEvents();
                 this.bindBackupEvents();
                 this.bindEditorEvents();
+                this.bindImageViewer();
                 this.bindPersistenceGuards();
                 this.setupViewport();
                 this.initNetworkStatus();
@@ -2291,6 +2329,14 @@
                     this._updateCharCount();
                 });
 
+                // 点击笔记里的图片 → 打开全屏查看器（可双指缩放）
+                ed.addEventListener('click', (e) => {
+                    const t = e.target;
+                    if (!t || t.tagName !== 'IMG') return;
+                    e.preventDefault();
+                    this._openImageViewer(t.currentSrc || t.src, t.getAttribute('alt') || '');
+                });
+
                 // ★ 标题与分类同样属于「内容」：不监听它们会导致
                 //   1) 只改标题不会触发自动保存
                 //   2) 应急草稿不包含标题，崩溃即丢标题
@@ -2340,6 +2386,202 @@
                 });
             }
 
+            // ---------- 图片查看器（全屏查看 + 双指缩放） ----------
+            // 说明：笔记里的图片以 base64 内联保存，编辑器内无法真正「缩放」，
+            //   因此点击图片打开全屏查看器：双指缩放、双击放大、拖动平移，
+            //   双指内收关闭；桌面端另外支持滚轮缩放与 +/- 按钮。
+            bindImageViewer() {
+                const v = this.els.imageViewer;
+                const img = this.els.imageViewerImg;
+                if (!v || !img) return;
+
+                const st = () => this._iv || (this._iv = { scale: 1, x: 0, y: 0 });
+                const pointers = new Map();
+                let pinchDist = 0, pinchScale = 1, pinchMid = null, pinchX = 0, pinchY = 0;
+                let tapTimer = null, lastTapAt = 0, lastTapX = 0, lastTapY = 0;
+
+                const twoPointers = () => pointers.size >= 2;
+                const pointerList = () => Array.from(pointers.values());
+                const distance = () => {
+                    const p = pointerList();
+                    if (p.length < 2) return 0;
+                    return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+                };
+                const midpoint = () => {
+                    const p = pointerList();
+                    if (p.length < 2) return null;
+                    return { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 };
+                };
+
+                v.addEventListener('pointerdown', (e) => {
+                    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                    // 捕获必须落在事件目标上：若捕获到容器，pointerup 会被重定向到容器，
+                    // 后续就分不清「点在图片上」还是「点在空白处」。
+                    try { e.target.setPointerCapture(e.pointerId); } catch (_) {}
+                    const s = st();
+                    if (pointers.size === 1) {
+                        s.startX = e.clientX; s.startY = e.clientY;
+                        s.startTx = s.x; s.startTy = s.y;
+                        s.moved = false; s.tStart = Date.now();
+                    } else {
+                        pinchDist = distance(); pinchScale = s.scale;
+                        pinchMid = midpoint(); pinchX = s.x; pinchY = s.y;
+                        s.moved = true;   // 多指操作不算点击
+                    }
+                    e.preventDefault();
+                });
+
+                v.addEventListener('pointermove', (e) => {
+                    if (!pointers.has(e.pointerId)) return;
+                    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                    const s = st();
+                    if (twoPointers()) {
+                        const d = distance();
+                        if (pinchDist > 0) {
+                            s.scale = Math.min(8, Math.max(0.25, pinchScale * (d / pinchDist)));
+                            const m = midpoint();
+                            if (pinchMid && m) {
+                                s.x = pinchX + (m.x - pinchMid.x);
+                                s.y = pinchY + (m.y - pinchMid.y);
+                            }
+                            this._applyImageTransform();
+                        }
+                        e.preventDefault();
+                        return;
+                    }
+                    const dx = e.clientX - (s.startX || 0);
+                    const dy = e.clientY - (s.startY || 0);
+                    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) s.moved = true;
+                    // 未放大时不做平移（否则整张图会被拖走）
+                    if (s.scale > 1) {
+                        s.x = (s.startTx || 0) + dx;
+                        s.y = (s.startTy || 0) + dy;
+                        this._applyImageTransform();
+                    }
+                });
+
+                const endPointer = (e) => {
+                    if (!pointers.has(e.pointerId)) return;
+                    pointers.delete(e.pointerId);
+                    const s = st();
+                    if (pointers.size === 0) {
+                        // 双指内收到足够小 → 关闭
+                        if (s.scale < 0.85) { this._closeImageViewer(); return; }
+                        // 捏合到 1 倍以下 → 回弹；放大后的缩放保持不变
+                        if (s.scale < 1) {
+                            s.scale = 1; s.x = 0; s.y = 0;
+                            this._applyImageTransform();
+                        }
+                        if (!s.moved && s.tStart && (Date.now() - s.tStart) < 500) {
+                            handleTap(e);
+                        }
+                    } else if (pointers.size === 1) {
+                        // 从双指变回单指：重新锚定，避免跳变
+                        const p = pointerList()[0];
+                        s.startX = p.x; s.startY = p.y; s.startTx = s.x; s.startTy = s.y;
+                        s.moved = true;
+                    }
+                };
+                v.addEventListener('pointerup', endPointer);
+                v.addEventListener('pointercancel', endPointer);
+
+                const handleTap = (e) => {
+                    if (e.target && e.target.closest && e.target.closest('.image-viewer-btn')) return;
+                    const now = Date.now();
+                    const isDouble = (now - lastTapAt) < 320
+                        && Math.abs(e.clientX - lastTapX) < 40
+                        && Math.abs(e.clientY - lastTapY) < 40;
+                    lastTapX = e.clientX; lastTapY = e.clientY;
+                    if (isDouble) {
+                        clearTimeout(tapTimer); tapTimer = null;
+                        // 双击已消费：清空计时，避免紧接着的一次单击被算成双击
+                        lastTapAt = 0;
+                        this._toggleImageZoom();
+                        return;
+                    }
+                    lastTapAt = now;
+                    clearTimeout(tapTimer);
+                    tapTimer = setTimeout(() => {
+                        tapTimer = null;
+                        lastTapAt = 0;
+                        if (e.target === img) this._toggleImageZoom();
+                        else this._closeImageViewer();   // 点空白处关闭
+                    }, 240);
+                };
+
+                // 桌面端滚轮缩放
+                v.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const s = st();
+                    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+                    this._setImageScale(s.scale * factor);
+                }, { passive: false });
+
+                if (this.els.imageViewerClose) {
+                    this.els.imageViewerClose.addEventListener('click', () => this._closeImageViewer());
+                }
+                if (this.els.imageViewerZoomIn) {
+                    this.els.imageViewerZoomIn.addEventListener('click', () => {
+                        const s = st(); this._setImageScale(s.scale * 1.4);
+                    });
+                }
+                if (this.els.imageViewerZoomOut) {
+                    this.els.imageViewerZoomOut.addEventListener('click', () => {
+                        const s = st(); this._setImageScale(s.scale / 1.4);
+                    });
+                }
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && v.classList.contains('open')) this._closeImageViewer();
+                });
+            }
+
+            _openImageViewer(src, alt) {
+                const v = this.els.imageViewer;
+                const img = this.els.imageViewerImg;
+                if (!v || !img || !src) return;
+                img.src = src;
+                img.alt = alt || '笔记图片';
+                this._iv = { scale: 1, x: 0, y: 0 };
+                this._applyImageTransform();
+                v.classList.add('open');
+                document.body.classList.add('image-viewer-open');
+                const hint = this.els.imageViewerHint;
+                if (hint) {
+                    hint.classList.remove('hide');
+                    clearTimeout(this._imageHintTimer);
+                    this._imageHintTimer = setTimeout(() => hint.classList.add('hide'), 2600);
+                }
+            }
+
+            _closeImageViewer() {
+                const v = this.els.imageViewer;
+                if (!v) return;
+                v.classList.remove('open');
+                document.body.classList.remove('image-viewer-open');
+                this._iv = null;
+                const img = this.els.imageViewerImg;
+                if (img) img.removeAttribute('src');
+            }
+
+            _applyImageTransform() {
+                const img = this.els.imageViewerImg;
+                if (!img || !this._iv) return;
+                img.style.transform = `translate(${this._iv.x}px, ${this._iv.y}px) scale(${this._iv.scale})`;
+            }
+
+            _setImageScale(scale) {
+                if (!this._iv) return;
+                this._iv.scale = Math.min(8, Math.max(1, scale));
+                if (this._iv.scale === 1) { this._iv.x = 0; this._iv.y = 0; }
+                this._applyImageTransform();
+            }
+
+            _toggleImageZoom() {
+                if (!this._iv) return;
+                if (this._iv.scale > 1.05) this._setImageScale(1);
+                else this._setImageScale(2.5);
+            }
+
             // ---------- 工具栏扩展动作 ----------
             handleToolbarAction(action) {
                 if (action === 'link') return this.insertLink();
@@ -2372,6 +2614,9 @@
                     const reader = new FileReader();
                     reader.onload = () => {
                         this.exec('insertImage', String(reader.result));
+                        // 新插入的图片同样禁止拖拽（避免误拖把图片从笔记里拽走）
+                        const imgs = this.els.richEditor.querySelectorAll('img');
+                        if (imgs.length) imgs[imgs.length - 1].draggable = false;
                     };
                     reader.onerror = () => this.showToast('图片读取失败', 'error');
                     reader.readAsDataURL(file);
@@ -2462,6 +2707,10 @@
 
             setEditorHtml(html) {
                 this.els.richEditor.innerHTML = html || '';
+                // 图片禁止拖拽：避免误拖把图片从笔记里拽走
+                this.els.richEditor.querySelectorAll('img').forEach(img => {
+                    img.draggable = false;
+                });
             }
 
             // ---------- 应急草稿（防止刷新/更新丢字） ----------
@@ -2578,19 +2827,21 @@
                 if (session !== this._session) return;
 
                 this.els.richEditor.removeAttribute('aria-busy');
-                this.els.noteTitleInput.value = title;
+                // 标题先归一化再回填：<input> 会吞掉换行等控制字符，
+                // 快照若保留原始标题，下次保存必然被判为「已修改」。
+                const safeTitle = sanitizeTitle(title);
+                this.els.noteTitleInput.value = safeTitle;
                 this.setEditorHtml(id ? normalizeToHtml(content) : '');
                 this._ensureCategorySelected(category);
                 this._savedRange = null;
                 this.lastSavedContent = this.getEditorHtml();
-                this.lastSavedTitle = title.trim();
+                this.lastSavedTitle = safeTitle;
                 this.lastSavedCategory = this.els.categorySelect.value;
+                this._dirty = false;
                 this._updateCharCount();
-                if (id) {
-                    this.els.lastEditTime.textContent = new Date().toLocaleString('zh-CN');
-                } else {
-                    this.els.lastEditTime.textContent = '';
-                }
+                // 显示笔记真实的最后修改时间，而不是「打开笔记的此刻」
+                this.els.lastEditTime.textContent = (id && savedUpdatedAt)
+                    ? this._formatEditTime(savedUpdatedAt) : '';
 
                 await this.maybeRestoreDraft(id, savedUpdatedAt, session);
                 if (session !== this._session) return;
@@ -2637,6 +2888,7 @@
                 this.editingId = null;
                 this._newNoteId = null;
                 this._savedRange = null;
+                this._dirty = false;
                 this.els.timestampToolbar.style.display = 'none';
                 const scrollY = parseInt(document.body.style.top || '0') * -1;
                 document.body.style.position = '';
@@ -2651,11 +2903,23 @@
             }
 
             async saveNote(force = false, session = this._session) {
-                const title = sanitizeTitle(this.els.noteTitleInput.value.trim()) || '未命名笔记';
+                const rawTitle = this.els.noteTitleInput.value.trim();
+                const rawContent = this.getEditorHtml();
+                // 空白的新笔记不落库：否则「新建后一字未写」也会留下一条空笔记
+                if (!this.editingId && !rawTitle && !rawContent) {
+                    if (force) this._showSaveStatus('已保存');
+                    return;
+                }
+                const title = sanitizeTitle(rawTitle) || '未命名笔记';
                 const category = this.els.categorySelect.value || 'daily';
-                const content = this.getEditorHtml();
+                const content = rawContent;
 
-                const unchanged = content === this.lastSavedContent
+                // 是否真的改过：
+                //   1) _dirty —— 用户有过任何输入（正文/标题/分类/恢复草稿）
+                //   2) 快照对比 —— 兜底，防止个别浏览器不派发 input 时漏存
+                // 两者都没变化时直接返回：仅仅查看笔记绝不能刷新 updatedAt。
+                const unchanged = !this._dirty
+                    && content === this.lastSavedContent
                     && title === (this.lastSavedTitle || '未命名笔记')
                     && category === (this.lastSavedCategory || 'daily');
                 if (unchanged) {
@@ -2693,11 +2957,18 @@
                     // 仅当仍处于同一会话时才更新编辑器状态
                     if (session === this._session) {
                         this.lastSavedContent = content;
-                        this.lastSavedTitle = this.els.noteTitleInput.value.trim();
+                        // 记录真正写进库里的值：不能用输入框的当前值，
+                        // 否则 await 期间的输入会被当成已保存，丢掉这次改动。
+                        this.lastSavedTitle = title;
                         this.lastSavedCategory = category;
+                        // 保存期间用户又改了内容的话，脏标记继续保持
+                        const curTitle = sanitizeTitle(this.els.noteTitleInput.value.trim()) || '未命名笔记';
+                        this._dirty = this.getEditorHtml() !== content
+                            || curTitle !== title
+                            || (this.els.categorySelect.value || 'daily') !== category;
                         if (isNew) this.editingId = noteId;
                         this._showSaveStatus('已保存');
-                        this.els.lastEditTime.textContent = new Date().toLocaleString('zh-CN');
+                        this.els.lastEditTime.textContent = this._formatEditTime(noteData.updatedAt);
                     }
                     this.renderNotes();
                     this.broadcast('notes-changed');
@@ -2751,6 +3022,8 @@
             }
 
             triggerAutoSave() {
+                // 用户确实动过内容：置脏标记，保证这次改动一定被写库
+                this._dirty = true;
                 clearTimeout(this.autoSaveTimer);
                 this.els.autoSaveStatus.textContent = '编辑中...';
                 this.els.autoSaveStatus.classList.add('show');
@@ -2810,6 +3083,22 @@
                     result = result.replace(new RegExp(k, 'g'), v);
                 }
                 return result;
+            }
+
+            // 编辑器底部的「最后修改时间」：显示笔记真实的更新时间，
+            // 今天显示到分钟，更早的显示到日期，避免打开笔记就被当成刚改过。
+            _formatEditTime(iso) {
+                const d = new Date(iso);
+                if (!iso || isNaN(d.getTime())) return '';
+                const now = new Date();
+                const sameDay = d.getFullYear() === now.getFullYear()
+                    && d.getMonth() === now.getMonth()
+                    && d.getDate() === now.getDate();
+                const pad = n => n.toString().padStart(2, '0');
+                if (sameDay) {
+                    return `最后编辑 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                }
+                return `最后编辑 ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
             }
 
             // ---------- 导入导出 ----------
